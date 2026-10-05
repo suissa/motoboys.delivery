@@ -25,7 +25,8 @@
     "simulate:quotes": "tsx scripts/simulate-quotes.ts",
     "simulate:location": "tsx scripts/simulate-location.ts",
     "simulate:dispatch": "tsx scripts/simulate-dispatch.ts",
-    "simulate:capacity": "tsx scripts/simulate-capacity.ts"
+    "simulate:capacity": "tsx scripts/simulate-capacity.ts",
+    "simulate:providers": "tsx scripts/simulate-providers.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
