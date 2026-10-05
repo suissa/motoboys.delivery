@@ -34,40 +34,54 @@ export function isWorking(d:Driver){
  return ACTIVE_STATUSES.has(d.status)&&!!d.sessionId;
 }
 
-export function normalizeWorkDay(d:Driver,now=new Date()){
+export type WorkDayRollover={
+ workDate?:string;
+ completedToday:number;
+ activeSecondsToday:number;
+ earnedToday:number;
+ activeSinceAt?:string;
+ closedActiveSeconds:number;
+};
+
+export function normalizeWorkDay(d:Driver,now=new Date()):WorkDayRollover|undefined{
  const today=dayKey(now);
  if(d.workDate===today)return undefined;
- const previous={
+ const dayStart=startOfLocalDay(now);
+ const previous:WorkDayRollover={
   workDate:d.workDate,
   completedToday:d.completedToday,
   activeSecondsToday:d.activeSecondsToday,
   earnedToday:d.earnedToday,
-  activeSinceAt:d.activeSinceAt
+  activeSinceAt:d.activeSinceAt,
+  closedActiveSeconds:d.activeSecondsToday
  };
- const start=startOfLocalDay(now);
+ if(d.activeSinceAt){
+  const openStart=Math.min(Date.parse(d.activeSinceAt),dayStart.getTime());
+  previous.closedActiveSeconds+=Math.max(0,Math.floor((dayStart.getTime()-openStart)/1000));
+ }
  d.workDate=today;
  d.completedToday=0;
  d.activeSecondsToday=0;
  d.earnedToday=0;
- if(isWorking(d))d.activeSinceAt=start.toISOString();
+ if(isWorking(d))d.activeSinceAt=dayStart.toISOString();
  else delete d.activeSinceAt;
  return previous;
 }
 
 export function beginActivePeriod(d:Driver,when=new Date()){
- normalizeWorkDay(d,when);
+ const rollover=normalizeWorkDay(d,when);
  d.activeSinceAt=when.toISOString();
- return when;
+ return rollover;
 }
 
 export function stopActivePeriod(d:Driver,when=new Date()){
- normalizeWorkDay(d,when);
- if(!d.activeSinceAt)return 0;
+ const rollover=normalizeWorkDay(d,when);
+ if(!d.activeSinceAt)return{seconds:0,rollover};
  const start=Math.max(Date.parse(d.activeSinceAt),startOfLocalDay(when).getTime());
  const seconds=Math.max(0,Math.floor((when.getTime()-start)/1000));
  d.activeSecondsToday+=seconds;
  delete d.activeSinceAt;
- return seconds;
+ return{seconds,rollover};
 }
 
 export function effectiveActiveSeconds(d:Driver,now=new Date()){
