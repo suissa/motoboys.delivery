@@ -27,6 +27,7 @@ PoC de uma rede de entregas com fila rotacional, justiça por entregas/hora, geo
 - Quote auditável separando preço definido pelo prestador, taxa da plataforma e total cobrado do cliente.
 - LocationSession temporária com escopo, finalidade e expiração; sessões expiradas não permanecem como localização operacional.
 - Dispatch explícito com oferta, aceite, rejeição, timeout, requeue, coleta, trânsito, chegada e confirmação.
+- Capacidade de rede por cidade, com reservas comprometidas e estado explícito de insuficiência.
 - Toda propriedade visual está em `src/configs/layout.yml`; o frontend recebe o YAML por `/api/config/layout` e transforma os valores em CSS custom properties em runtime.
 
 ## Execução
@@ -78,7 +79,7 @@ O próximo passo de arquitetura é separar esse histórico de persistência do E
 
 ## Produção
 
-Persistência transacional, Event Log/projeções, contabilização de jornada, WorkPolicy, quote por prestador, liquidação financeira idempotente, localização temporária e dispatch completo estão implementados. Ainda permanecem: autenticação/autorização, capacidade de rede, observabilidade e um provedor oficial de WhatsApp.
+Persistência transacional, Event Log/projeções, contabilização de jornada, WorkPolicy, quote por prestador, liquidação financeira idempotente, localização temporária e dispatch completo estão implementados. Ainda permanecem: autenticação/autorização, rede multiempresa, observabilidade e um provedor oficial de WhatsApp.
 
 
 ## Simulações executáveis
@@ -95,6 +96,7 @@ npm run simulate:quotes
 npm run simulate:location
 npm run simulate:payments
 npm run simulate:dispatch
+npm run simulate:capacity
 npm run simulate:orders
 npm run simulate:whatsapp
 npm run simulate:events
