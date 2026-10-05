@@ -3,7 +3,35 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "scripts": {"dev":"tsx watch src/server.ts","build":"tsc","start":"node dist/server.js"},
-  "dependencies": {"cors":"^2.8.5","dotenv":"^17.2.3","express":"^5.1.0","qrcode":"^1.5.4","yaml":"^2.8.1"},
-  "devDependencies": {"@types/cors":"^2.8.17","@types/express":"^5.0.3","@types/node":"^24.7.2","@types/qrcode":"^1.5.6","tsx":"^4.20.5","typescript":"^5.9.3"}
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "simulate:geo": "tsx scripts/simulate-geo.ts",
+    "simulate:queue": "tsx scripts/simulate-queue.ts",
+    "simulate:shifts": "tsx scripts/simulate-shifts.ts",
+    "simulate:payments": "tsx scripts/simulate-payments.ts",
+    "simulate:orders": "tsx scripts/simulate-orders.ts",
+    "simulate:whatsapp": "tsx scripts/simulate-whatsapp.ts",
+    "simulate:api": "tsx scripts/simulate-api.ts",
+    "simulate:pipeline": "tsx scripts/simulate-pipeline.ts",
+    "test:unit": "node --import tsx --test tests/unit",
+    "test:bdd": "node --import tsx --test tests/bdd",
+    "test": "npm run test:unit && npm run test:bdd"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "qrcode": "^1.5.4",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.7.2",
+    "@types/qrcode": "^1.5.6",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.3"
+  }
 }
