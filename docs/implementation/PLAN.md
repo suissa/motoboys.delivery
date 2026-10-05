@@ -112,7 +112,9 @@ Mensagens recebidas e enviadas devem possuir contrato normalizado, correlação 
 
 **Depende de:** #3, #7 e #6.
 
-### 12. #11 — Conversational Twins de cliente e motorista
+### 12. #11 — Conversational Twins de cliente e motorista ✅
+
+**Status:** implementada.
 
 Criar os contextos conversacionais independentes do cliente e do motorista, vinculados ao mesmo `serviceId`.
 
