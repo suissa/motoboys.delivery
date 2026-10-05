@@ -19,6 +19,8 @@ PoC de uma rede de entregas com fila rotacional, justiça por entregas/hora, geo
 - Métricas de entregas e dinheiro por hora/dia/semana/mês, por motoboy, empresa e cidade.
 - Total recebido hoje fixado no topo e animado quando muda.
 - Tema escuro/amarelo.
+- Persistência operacional em SQLite com transações, WAL e histórico recuperável de estados.
+- Estado canônico persistido independente do processo HTTP ou canal de comunicação.
 - Toda propriedade visual está em `src/configs/layout.yml`; o frontend recebe o YAML por `/api/config/layout` e transforma os valores em CSS custom properties em runtime.
 
 ## Execução
@@ -59,9 +61,15 @@ Webhook WhatsApp:
 {"message":{"from":"5515999990001","text":"iniciar turno","location":{"latitude":-24.112,"longitude":-49.334}}}
 ```
 
+## Persistência
+
+O estado operacional usa SQLite por padrão em `data/motoboys.sqlite` (`MOTOBOYS_DB_FILE`). As mutações passam por transações SQLite, com `WAL` e `synchronous=FULL`. Cada transação grava um histórico recuperável em `state_history`.
+
+O próximo passo de arquitetura é separar esse histórico de persistência do Event Log de domínio da issue #3.
+
 ## Produção
 
-Esta é uma PoC e usa memória. Para produção: persistência transacional, idempotência, autenticação/autorização, assinatura de webhooks, fila de eventos, observabilidade e um provedor oficial de WhatsApp.
+Persistência transacional está implementada. Ainda permanecem: idempotência financeira, autenticação/autorização, assinatura de webhooks, fila de eventos de domínio, observabilidade e um provedor oficial de WhatsApp.
 
 
 ## Simulações executáveis
@@ -75,6 +83,7 @@ npm run simulate:shifts
 npm run simulate:payments
 npm run simulate:orders
 npm run simulate:whatsapp
+npm run simulate:persistence
 npm run simulate:api
 ```
 
@@ -100,7 +109,11 @@ npm run test:bdd
 npm test
 ```
 
-Os testes cobrem geometria/ETA, fila de justiça, elegibilidade por distância/status/descanso, turnos, descanso, parser WhatsApp, ciclo Pix, ciclo de pedido, dispatch e confirmação da entrega.
+Os testes cobrem geometria/ETA, fila de justiça, elegibilidade por distância/status/descanso, turnos, descanso, parser WhatsApp, ciclo Pix, ciclo de pedido, dispatch, confirmação da entrega e persistência transacional, rollback, reinício e concorrência entre processos.
+
+## Implementação em andamento
+
+A ordem oficial de implementação está em `docs/implementation/PLAN.md`. A issue #2 — persistência transacional e fonte de verdade operacional — está implementada; as demais seguem a sequência definida no plano.
 
 ## Lacunas planejadas
 
