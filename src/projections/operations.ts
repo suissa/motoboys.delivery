@@ -1,4 +1,4 @@
-import type {Company,Driver,Order,Payment,Shift} from "../domain.js";
+import type {Company,Driver,Order,Payment,Shift,WorkPolicy} from "../domain.js";
 import type {ProjectionUpdate} from "../persistence/database.js";
 
 export const OPERATIONS_PROJECTION="operations";
@@ -28,4 +28,5 @@ export function orderView(o:Order){return projection("orders",o.id,{
 export function paymentView(p:Payment){return projection("payments",p.id,{
   id:p.id,orderId:p.orderId,price:p.price,expiresAt:p.expiresAt,status:p.status
 })}
+export function workPolicyView(p:WorkPolicy){return projection("work_policies",p.id,{id:p.id,driverId:p.driverId,maxShiftSeconds:p.maxShiftSeconds,requiredRestSeconds:p.requiredRestSeconds,dailyGoalDeliveries:p.dailyGoalDeliveries,enabled:p.enabled})}
 export function deleteView(collection:string,id:string):ProjectionUpdate{return projection(collection,id,null)}
