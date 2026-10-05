@@ -26,7 +26,7 @@ export function orderView(o:Order){return projection("orders",o.id,{
   assignedAt:o.assignedAt,completedAt:o.completedAt,photoUrl:o.photoUrl,paymentExpiresAt:o.paymentExpiresAt
 })}
 export function paymentView(p:Payment){return projection("payments",p.id,{
-  id:p.id,orderId:p.orderId,price:p.price,expiresAt:p.expiresAt,status:p.status
+  id:p.id,orderId:p.orderId,price:p.price,providerPrice:p.providerPrice,platformFee:p.platformFee,providerId:p.providerId,platformFeeSourceId:p.platformFeeSourceId,expiresAt:p.expiresAt,status:p.status
 })}
 export function workPolicyView(p:WorkPolicy){return projection("work_policies",p.id,{id:p.id,driverId:p.driverId,maxShiftSeconds:p.maxShiftSeconds,requiredRestSeconds:p.requiredRestSeconds,dailyGoalDeliveries:p.dailyGoalDeliveries,enabled:p.enabled})}
 export function deleteView(collection:string,id:string):ProjectionUpdate{return projection(collection,id,null)}
