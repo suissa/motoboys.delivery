@@ -19,7 +19,7 @@ class MockWhatsApp implements WhatsAppGateway{
  async send(m:OutboundMessage){console.log("[WHATSAPP OUT]",JSON.stringify(m))}
 }
 
-type OfficialConfig={
+export type OfficialConfig={
  graphBaseUrl:string;
  graphVersion:string;
  phoneNumberId:string;
@@ -66,7 +66,7 @@ function textPayload(message:OutboundMessage){
  };
 }
 
-class OfficialWhatsApp implements WhatsAppGateway{
+export class OfficialWhatsApp implements WhatsAppGateway{
  constructor(private readonly config:OfficialConfig){}
  private async sendPayload(payload:Record<string,unknown>){
   const url=`${this.config.graphBaseUrl}/${this.config.graphVersion}/${this.config.phoneNumberId}/messages`;
