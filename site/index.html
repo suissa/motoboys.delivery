@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#07111f" />
+  <title>Entregas sem complicação — Motoboys</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --cyan:#00d2fd; --blue:#0072fc; --purple:#895bfb; }
+    html { scroll-behavior:smooth; }
+    body { background:#050a12; color:#eef6ff; }
+    .orb { filter:blur(70px); opacity:.25; pointer-events:none; }
+    .glass { background:rgba(10,20,34,.78); border:1px solid rgba(255,255,255,.12); box-shadow:0 20px 70px rgba(0,0,0,.35),inset 0 1px rgba(255,255,255,.06); backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px); }
+    .action-footer { transition:transform .38s cubic-bezier(.2,.8,.2,1),border-radius .38s,height .38s; }
+    .phone-input { border:2px solid rgba(255,255,255,.12); border-radius:999px; transition:border .18s,border-radius .18s,background .18s; }
+    .phone-input:focus { outline:none; border-radius:0; border:0; border-bottom:3px solid var(--cyan); background:transparent; }
+    .talking { animation:talk 1s infinite alternate; }
+    @keyframes talk { from{transform:scale(1)} to{transform:scale(1.08)} }
+  </style>
+</head>
+<body class="min-h-screen overflow-x-hidden">
+  <div class="fixed inset-0 overflow-hidden -z-10">
+    <div class="orb absolute -top-32 -left-24 w-96 h-96 rounded-full bg-cyan-500"></div>
+    <div class="orb absolute top-1/3 -right-24 w-[28rem] h-[28rem] rounded-full bg-blue-600"></div>
+    <div class="orb absolute bottom-0 left-1/3 w-80 h-80 rounded-full bg-purple-600"></div>
+  </div>
+
+  <main class="pb-32">
+    <section class="max-w-5xl mx-auto px-5 pt-12 pb-16 md:pt-20 md:pb-24">
+      <div class="max-w-3xl">
+        <div class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-cyan-200">
+          <span class="w-2 h-2 rounded-full bg-cyan-300"></span> Entregas pela sua cidade
+        </div>
+        <h1 class="mt-6 text-4xl md:text-6xl font-semibold tracking-tight leading-[1.05]">Mais corridas. Menos tempo parado.</h1>
+        <p class="mt-5 max-w-2xl text-base md:text-lg leading-7 text-slate-300">Receba oportunidades de entrega pelo WhatsApp, aceite quando quiser e compartilhe sua localização em tempo real somente durante a corrida.</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-4 mt-12">
+        <article class="glass rounded-3xl p-6"><div class="text-cyan-300 text-sm font-medium">01</div><h2 class="mt-3 text-lg font-semibold">Pedido direto</h2><p class="mt-2 text-sm leading-6 text-slate-400">Você recebe a oportunidade de entrega no seu WhatsApp, sem precisar ficar procurando corridas.</p></article>
+        <article class="glass rounded-3xl p-6"><div class="text-cyan-300 text-sm font-medium">02</div><h2 class="mt-3 text-lg font-semibold">Você decide</h2><p class="mt-2 text-sm leading-6 text-slate-400">Aceite a corrida quando fizer sentido para você. Sem mensalidade e sem aplicativo para instalar.</p></article>
+        <article class="glass rounded-3xl p-6"><div class="text-cyan-300 text-sm font-medium">03</div><h2 class="mt-3 text-lg font-semibold">Localização só quando precisa</h2><p class="mt-2 text-sm leading-6 text-slate-400">Durante uma entrega, compartilhe sua localização em tempo real para que cliente e empresa acompanhem a corrida.</p></article>
+      </div>
+
+      <section class="mt-6 glass rounded-3xl p-6 md:p-8">
+        <p class="text-sm text-cyan-200">Para você</p>
+        <h2 class="mt-1 text-2xl font-semibold">Sem mensalidade. Sem app. Sem complicação.</h2>
+        <p class="mt-2 text-slate-400 max-w-2xl">O sistema organiza as entregas, ajuda as empresas a acompanhar as corridas e conecta você às oportunidades disponíveis.</p>
+      </section>
+    </section>
+  </main>
+
+  <div id="backdrop" class="fixed inset-0 bg-black/45 opacity-0 pointer-events-none transition-opacity duration-300 z-40"></div>
+
+  <footer id="actionFooter" class="action-footer fixed z-50 left-0 right-0 bottom-0 h-24 md:h-28 rounded-t-3xl glass">
+    <div class="max-w-3xl mx-auto h-full px-5 flex items-center justify-center">
+      <button id="startBtn" class="w-full md:w-auto min-w-[280px] h-14 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 text-slate-950 font-bold text-lg shadow-lg shadow-cyan-500/20 active:scale-[.98] transition-transform">EU QUERO</button>
+
+      <div id="phonePanel" class="hidden w-full py-5">
+        <div id="prompt" class="text-lg md:text-xl font-medium mb-3">Qual seu WhatsApp?</div>
+        <div id="inputArea">
+          <input id="phoneInput" class="phone-input w-full h-14 px-5 bg-white/5 text-lg placeholder:text-slate-500" inputmode="tel" autocomplete="tel" placeholder="(00) 00000-0000" />
+          <div class="mt-2 flex items-center justify-between gap-4">
+            <button id="talkBtn" type="button" class="text-sm text-cyan-300">Deseja falar?</button>
+            <span id="status" class="text-xs text-slate-500 text-right"></span>
+          </div>
+        </div>
+        <div id="confirmArea" class="hidden">
+          <button id="confirmBtn" class="w-full rounded-2xl border border-cyan-300/30 bg-cyan-300/10 px-5 py-4 text-left text-sm md:text-base text-cyan-50"></button>
+          <div id="sending" class="hidden mt-3 text-sm text-slate-400">Enviando seu WhatsApp…</div>
+          <div id="success" class="hidden mt-3 text-sm text-emerald-300">Pronto. Confira seu WhatsApp nos próximos segundos.</div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const MOCK_ENDPOINT = 'https://example.com/api/motoboys/whatsapp';
+    const footer = document.getElementById('actionFooter');
+    const backdrop = document.getElementById('backdrop');
+    const startBtn = document.getElementById('startBtn');
+    const phonePanel = document.getElementById('phonePanel');
+    const phoneInput = document.getElementById('phoneInput');
+    const talkBtn = document.getElementById('talkBtn');
+    const status = document.getElementById('status');
+    const inputArea = document.getElementById('inputArea');
+    const confirmArea = document.getElementById('confirmArea');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const sending = document.getElementById('sending');
+    const success = document.getElementById('success');
+    let normalizedPhone = '', displayPhone = '', recognition = null, listening = false, voiceMode = false;
+
+    function openPanel() {
+      footer.classList.remove('h-24','md:h-28');
+      footer.classList.add('h-[19rem]','md:h-[18rem]');
+      startBtn.classList.add('hidden');
+      phonePanel.classList.remove('hidden');
+      backdrop.classList.remove('opacity-0','pointer-events-none');
+      backdrop.classList.add('opacity-100');
+      setTimeout(() => phoneInput.focus(), 350);
+    }
+    startBtn.addEventListener('click', openPanel);
+
+    function digits(value) { return value.replace(/\D/g,''); }
+    function formatBR(value) {
+      const d = digits(value).slice(0,11);
+      if (d.length <= 2) return d;
+      if (d.length <= 7) return `(${d.slice(0,2)}) ${d.slice(2)}`;
+      return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+    }
+
+    function acceptPhone(raw) {
+      let d = digits(raw);
+      if (d.startsWith('55')) d = d.slice(2);
+      if (d.length !== 10 && d.length !== 11) return false;
+      normalizedPhone = '55' + d;
+      displayPhone = formatBR(d);
+      phoneInput.value = displayPhone;
+      confirmBtn.textContent = `Se você confirma ${displayPhone} como seu WhatsApp, clique aqui`;
+      inputArea.classList.add('hidden');
+      confirmArea.classList.remove('hidden');
+      if (voiceMode) speak(`Se você confirma ${displayPhone} como seu WhatsApp, diga CONFIRMO`);
+      return true;
+    }
+
+    phoneInput.addEventListener('input', e => {
+      e.target.value = formatBR(e.target.value);
+      status.textContent = '';
+      const d = digits(e.target.value);
+      if (d.length === 10 || d.length === 11) acceptPhone(d);
+    });
+
+    phoneInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !acceptPhone(phoneInput.value)) status.textContent = 'Digite um WhatsApp válido.';
+    });
+
+    function setupRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) { status.textContent = 'Seu navegador não oferece reconhecimento de voz.'; return null; }
+      const r = new SpeechRecognition();
+      r.lang = 'pt-BR'; r.continuous = true; r.interimResults = true;
+      r.onstart = () => { listening=true; talkBtn.textContent='Parar de falar'; talkBtn.classList.add('talking'); status.textContent='Ouvindo…'; };
+      r.onend = () => { listening=false; talkBtn.textContent='Deseja falar?'; talkBtn.classList.remove('talking'); if (voiceMode && !normalizedPhone) { try { r.start(); } catch {} } };
+      r.onerror = () => { listening=false; status.textContent='Não foi possível ouvir. Tente novamente.'; talkBtn.classList.remove('talking'); };
+      r.onresult = event => {
+        let transcript='';
+        for (let i=event.resultIndex;i<event.results.length;i++) transcript += event.results[i][0].transcript + ' ';
+        const t=transcript.trim();
+        if (!normalizedPhone) {
+          const spoken=t.toLowerCase().replace(/zero/g,'0').replace(/um/g,'1').replace(/dois/g,'2').replace(/três/g,'3').replace(/tres/g,'3').replace(/quatro/g,'4').replace(/cinco/g,'5').replace(/seis/g,'6').replace(/sete/g,'7').replace(/oito/g,'8').replace(/nove/g,'9');
+          const d=digits(spoken);
+          if (d.length >= 10) acceptPhone(d.slice(-11));
+        } else if (/\bconfirmo\b/i.test(t)) confirmPhone();
+      };
+      return r;
+    }
+
+    talkBtn.addEventListener('click', () => {
+      voiceMode=true;
+      if (!recognition) recognition=setupRecognition();
+      if (!recognition) return;
+      if (listening) { recognition.stop(); voiceMode=false; return; }
+      try { recognition.start(); } catch {}
+    });
+
+    function speak(text) {
+      if (!('speechSynthesis' in window)) return;
+      speechSynthesis.cancel();
+      const utter=new SpeechSynthesisUtterance(text);
+      utter.lang='pt-BR'; utter.rate=.98; speechSynthesis.speak(utter);
+    }
+
+    async function confirmPhone() {
+      if (!normalizedPhone) return;
+      if (listening && recognition) recognition.stop();
+      sending.classList.remove('hidden'); success.classList.add('hidden');
+      confirmBtn.disabled=true; confirmBtn.classList.add('opacity-50');
+      try {
+        await fetch(MOCK_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({whatsapp:normalizedPhone,display:displayPhone,source:'motoboys-site'})});
+      } catch (_) {}
+      setTimeout(() => {
+        sending.classList.add('hidden'); success.classList.remove('hidden'); confirmBtn.textContent='WhatsApp enviado';
+      },650);
+    }
+    confirmBtn.addEventListener('click', confirmPhone);
+  </script>
+</body>
+</html>
