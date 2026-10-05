@@ -3,7 +3,7 @@ import type {CapacityReservation,Driver} from "../domain.js";
 import {capacityReservations,companies,drivers,orders,shifts,changed,transaction} from "../store.js";
 import {refreshLocationSessions} from "./location.js";import {rankCandidates} from "./queue.js";
 import {effectiveActiveSeconds} from "./work-time.js";
-import {isDispatchEligibleByPolicy} from "./work-policy.js";
+import {isDispatchEligibleByPolicy} from "./work-policy.js";import {listProviders,providerCapacity} from "./providers.js";
 import {emitDomainEvent} from "../events.js";
 import {orderView} from "../projections/operations.js";
 
@@ -43,7 +43,9 @@ export function capacityForCity(city:string,now=new Date()){
   eligibleDrivers:eligible.length,
   committedReservations:committed.length,
   availableCapacity:Math.max(eligible.length-committed.length,0),
-  committedInCurrentWindow:currentWindowReservations.length
+  committedInCurrentWindow:currentWindowReservations.length,
+  providers:listProviders(city).map(p=>({...p,eligibleDrivers:eligible.filter(d=>(d.providerId??d.companyId)===p.id).length,committedReservations:committed.filter(r=>orders.get(r.orderId)?.assignedProviderId===p.id).length})),
+  providerCapacity:providerCapacity(city)
  };
 }
 
