@@ -25,7 +25,7 @@ try {
   await fetch(`http://127.0.0.1:${port}/api/orders/${created.order.id}/confirm`,{method:"POST"});
   const awaiting=await (await fetch(`http://127.0.0.1:${port}/api/state`)).json();
   const confirmation=awaiting.orders.find((x:any)=>x.id===created.order.id).confirmationCode;
-  assert.match(confirmation,/^\\d{6}$/);
+  assert.match(confirmation,/^\d{6}$/);
   await fetch(`http://127.0.0.1:${port}/api/whatsapp/webhook`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({message:{from:"5515999990001",text:confirmation}})});
   const completed=await (await fetch(`http://127.0.0.1:${port}/api/state`)).json();
   assert.equal(completed.orders.find((x:any)=>x.id===created.order.id).status,"COMPLETED");
