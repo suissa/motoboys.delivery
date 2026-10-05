@@ -67,14 +67,14 @@ export function acceptDispatch(orderId:string,driverId:string){
   const o=requireOrder(orderId);
   if(o.status!=="OFFERED"||o.assignedDriverId!==driverId)throw Error("Oferta não disponível para este motorista");
   if(o.offerExpiresAt&&Date.parse(o.offerExpiresAt)<=Date.now())throw Error("Oferta expirada");
+  const d=drivers.get(driverId);
+  if(!d)throw Error("Motoboy não encontrado");
   o.status="ASSIGNED";
   o.assignedProviderId=o.assignedProviderId??(d.providerId??d.companyId);
   o.acceptedAt=new Date().toISOString();
   o.assignedAt=o.acceptedAt;
   delete o.offerExpiresAt;
   delete o.dispatchOfferId;
-  const d=drivers.get(driverId);
-  if(!d)throw Error("Motoboy não encontrado");
   d.status="BUSY";
   emitDomainEvent({type:"DispatchAccepted",aggregateType:"order",aggregateId:o.id,payload:{serviceId:o.id,driverId,providerId:o.assignedProviderId,acceptedAt:o.acceptedAt},projections:[orderView(o),driverView(d)]});
   beginServiceLocation(driverId,o.id);
@@ -143,7 +143,7 @@ export function dispatchSearch(orderId:string){
  return createDispatchOffer(orderId);
 }
 
-const validTransitions:Record<OrderStatus,OrderStatus[]>={
+export const validTransitions:Record<OrderStatus,OrderStatus[]>={
  AWAITING_PAYMENT:[],
  PAID:["SEARCHING_DRIVER"],
  SEARCHING_DRIVER:["OFFERED"],
@@ -176,6 +176,7 @@ export function transitionDelivery(orderId:string,next:OrderStatus,actorDriverId
  transaction(()=>{
   const o=requireOrder(orderId);
   if(!validTransitions[o.status].includes(next))throw Error(`Transição inválida: ${o.status} → ${next}`);
+  if(["PICKED_UP","IN_TRANSIT","ARRIVED"].includes(next)&&!actorDriverId)throw Error("driverId é obrigatório para esta transição");
   if(actorDriverId&&o.assignedDriverId!==actorDriverId)throw Error("Motorista não está atribuído a este pedido");
   const previous=o.status;
   const now=new Date().toISOString();
