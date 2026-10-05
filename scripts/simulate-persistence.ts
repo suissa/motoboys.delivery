@@ -28,6 +28,8 @@ async function runServer(action:(base:string)=>Promise<void>){
   env:{...env,PORT:String(port),PUBLIC_BASE_URL:`http://127.0.0.1:${port}`},
   stdio:["ignore","pipe","pipe"]
  });
+ let spawnError:Error|undefined;
+ child.once("error",error=>{spawnError=error instanceof Error?error:Error(String(error))});
  let stdout="";
  let stderr="";
  child.stdout?.on("data",data=>{stdout+=data.toString()});
