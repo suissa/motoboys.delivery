@@ -28,6 +28,7 @@ PoC de uma rede de entregas com fila rotacional, justiça por entregas/hora, geo
 - LocationSession temporária com escopo, finalidade e expiração; sessões expiradas não permanecem como localização operacional.
 - Dispatch explícito com oferta, aceite, rejeição, timeout, requeue, coleta, trânsito, chegada e confirmação.
 - Capacidade de rede por cidade, com reservas comprometidas e estado explícito de insuficiência.
+- Rede multi-provider com empresas e independentes, elegibilidade por provider e `assignedProviderId` auditável.
 - Toda propriedade visual está em `src/configs/layout.yml`; o frontend recebe o YAML por `/api/config/layout` e transforma os valores em CSS custom properties em runtime.
 
 ## Execução
@@ -45,7 +46,7 @@ Abra `http://localhost:60060`.
 1. `POST /api/orders` cria o pedido.
 2. O servidor chama `FINANCIAL_API/cobranca`.
 3. A camada WhatsApp envia a cobrança ao cliente.
-4. O financeiro chama `POST /api/payments/webhook`.
+4. O financeiro chama `POST /api/payments/webhook` com assinatura HMAC e `Idempotency-Key`.
 5. O financeiro liquida a cobrança no ledger e dispara o dispatch.
 6. O dispatcher cria uma oferta para o motoboy elegível com menor entregas/hora.
 7. O motoboy aceita ou recusa a oferta.
@@ -79,7 +80,7 @@ O próximo passo de arquitetura é separar esse histórico de persistência do E
 
 ## Produção
 
-Persistência transacional, Event Log/projeções, contabilização de jornada, WorkPolicy, quote por prestador, liquidação financeira idempotente, localização temporária e dispatch completo estão implementados. Ainda permanecem: autenticação/autorização, rede multiempresa, observabilidade e um provedor oficial de WhatsApp.
+Persistência transacional, Event Log/projeções, contabilização de jornada, WorkPolicy, quote por prestador, liquidação financeira idempotente, localização temporária e dispatch completo estão implementados. Ainda permanecem: autenticação/autorização, observabilidade e um provedor oficial de WhatsApp.
 
 
 ## Simulações executáveis
@@ -97,6 +98,7 @@ npm run simulate:location
 npm run simulate:payments
 npm run simulate:dispatch
 npm run simulate:capacity
+npm run simulate:providers
 npm run simulate:orders
 npm run simulate:whatsapp
 npm run simulate:events
@@ -130,7 +132,7 @@ Os testes cobrem geometria/ETA, fila de justiça, elegibilidade por distância/s
 
 ## Implementação em andamento
 
-A ordem oficial de implementação está em `docs/implementation/PLAN.md`. A issue #2 — persistência transacional e fonte de verdade operacional — está implementada; as demais seguem a sequência definida no plano.
+A ordem oficial de implementação está em `docs/implementation/PLAN.md`. As issues #2, #3, #4, #13, #12, #8, #10, #7 e #5 já estão implementadas. A #6 também está implementada; as demais seguem a sequência definida no plano.
 
 ## Lacunas planejadas
 
