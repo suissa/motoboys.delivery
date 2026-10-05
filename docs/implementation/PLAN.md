@@ -6,9 +6,11 @@ A regra de dependência é: uma issue pode depender somente de issues anteriores
 
 ## Ordem
 
-### 1. #2 — Persistência transacional e fonte de verdade operacional
+### 1. #2 — Persistência transacional e fonte de verdade operacional ✅
 
 Primeira base técnica da operação.
+
+**Status:** implementada em SQLite com transações, WAL, histórico recuperável e proteção contra concorrência entre processos.
 
 Implementar persistência transacional para substituir o estado operacional em memória e estabelecer uma fonte de verdade durável para serviços, pedidos, motoristas, turnos, pagamentos e transições.
 
