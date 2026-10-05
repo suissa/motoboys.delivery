@@ -94,7 +94,9 @@ A garantia é da rede, não de um motoboy específico.
 
 **Depende de:** #4, #7 e #10.
 
-### 10. #6 — Rede multiempresa e distribuição entre empresas e independentes
+### 10. #6 — Rede multiempresa e distribuição entre empresas e independentes ✅
+
+**Status:** implementada.
 
 Expandir a capacidade para múltiplas empresas, independentes e outros provedores elegíveis.
 
