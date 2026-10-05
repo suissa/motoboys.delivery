@@ -49,6 +49,16 @@ database.exec(`
   CREATE INDEX IF NOT EXISTS idx_domain_events_aggregate
     ON domain_events(aggregate_type,aggregate_id,sequence);
 
+  CREATE TABLE IF NOT EXISTS domain_event_projections(
+    event_id TEXT NOT NULL,
+    projection_name TEXT NOT NULL,
+    collection TEXT NOT NULL,
+    entity_id TEXT NOT NULL,
+    state_json TEXT,
+    PRIMARY KEY(event_id,projection_name,collection,entity_id),
+    FOREIGN KEY(event_id) REFERENCES domain_events(event_id) ON DELETE CASCADE
+  );
+
   CREATE TABLE IF NOT EXISTS projections(
     projection_name TEXT NOT NULL,
     collection TEXT NOT NULL,
@@ -194,12 +204,24 @@ export function appendStoredEvent(event:{
   aggregateId:string;
   payload:Record<string,unknown>;
   occurredAt:string;
+  projections:ProjectionUpdate[];
 }){
   if(!inTransaction())throw Error("Eventos de domínio devem ser gravados dentro de uma transação");
+  const tx=currentTransactionId();
+  if(!tx)throw Error("Transação de domínio sem transactionId");
   database.prepare(`
     INSERT INTO domain_events(event_id,transaction_id,event_type,aggregate_type,aggregate_id,payload_json,occurred_at)
     VALUES(?,?,?,?,?,?,?)
-  `).run(event.eventId,currentTransactionId(),event.eventType,event.aggregateType,event.aggregateId,JSON.stringify(event.payload),event.occurredAt);
+  `).run(event.eventId,tx,event.eventType,event.aggregateType,event.aggregateId,JSON.stringify(event.payload),event.occurredAt);
+  const insertProjection=database.prepare(`
+    INSERT INTO domain_event_projections(event_id,projection_name,collection,entity_id,state_json)
+    VALUES(?,?,?,?,?)
+  `);
+  for(const projection of event.projections){
+    insertProjection.run(event.eventId,projection.projectionName,projection.collection,projection.entityId,projection.state===null?null:JSON.stringify(projection.state));
+    applyProjection(projection);
+  }
+  insertProjection.close();
 }
 
 export function applyProjection(update:ProjectionUpdate){
@@ -221,6 +243,16 @@ export function applyProjection(update:ProjectionUpdate){
 
 export function readDomainEvents():StoredDomainEvent[]{
   return database.prepare("SELECT sequence,event_id,transaction_id,event_type,aggregate_type,aggregate_id,payload_json,occurred_at FROM domain_events ORDER BY sequence").all() as StoredDomainEvent[];
+}
+
+export function readEventProjections(eventId:string):ProjectionUpdate[]{
+  const rows=database.prepare("SELECT projection_name,collection,entity_id,state_json FROM domain_event_projections WHERE event_id=?").all(eventId) as Array<{projection_name:string;collection:string;entity_id:string;state_json:string|null}>;
+  return rows.map(row=>({
+    projectionName:row.projection_name,
+    collection:row.collection,
+    entityId:row.entity_id,
+    state:row.state_json===null?null:JSON.parse(row.state_json) as Record<string,unknown>
+  }));
 }
 
 export function readProjection(projectionName:string,collection?:string){
@@ -245,9 +277,11 @@ export function history(collection?:string){
 export function resetDatabase(seeds:Record<string,Record<string,unknown>[]>){
   transaction(()=>{
     database.exec("DELETE FROM entities");
+    database.exec("DELETE FROM domain_event_projections");
     database.exec("DELETE FROM domain_events");
     database.exec("DELETE FROM projections");
     database.exec("DELETE FROM sqlite_sequence WHERE name='state_history'");
+    database.exec("DELETE FROM sqlite_sequence WHERE name='domain_event_projections'");
     database.exec("DELETE FROM sqlite_sequence WHERE name='domain_events'");
     database.exec("DELETE FROM state_history");
     for(const [collection,rows] of Object.entries(seeds)){
