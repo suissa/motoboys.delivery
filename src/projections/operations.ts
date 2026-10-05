@@ -22,7 +22,7 @@ export function shiftView(s:Shift){return projection("shifts",s.id,{
 })}
 export function orderView(o:Order){return projection("orders",o.id,{
   id:o.id,companyId:o.companyId,pickup:o.pickup,destination:o.destination,price:o.price,providerPrice:o.providerPrice,platformFee:o.platformFee,
-  status:o.status,customerTotal:o.customerTotal,quote:o.quote,assignedDriverId:o.assignedDriverId,dispatchOfferId:o.dispatchOfferId,offerExpiresAt:o.offerExpiresAt,offeredAt:o.offeredAt,acceptedAt:o.acceptedAt,pickedUpAt:o.pickedUpAt,inTransitAt:o.inTransitAt,arrivedAt:o.arrivedAt,createdAt:o.createdAt,paidAt:o.paidAt,
+  status:o.status,capacityStatus:o.capacityStatus,capacityReservationId:o.capacityReservationId,customerTotal:o.customerTotal,quote:o.quote,assignedDriverId:o.assignedDriverId,dispatchOfferId:o.dispatchOfferId,offerExpiresAt:o.offerExpiresAt,offeredAt:o.offeredAt,acceptedAt:o.acceptedAt,pickedUpAt:o.pickedUpAt,inTransitAt:o.inTransitAt,arrivedAt:o.arrivedAt,createdAt:o.createdAt,paidAt:o.paidAt,
   assignedAt:o.assignedAt,completedAt:o.completedAt,photoUrl:o.photoUrl,paymentExpiresAt:o.paymentExpiresAt
 })}
 export function paymentView(p:Payment){return projection("payments",p.id,{
