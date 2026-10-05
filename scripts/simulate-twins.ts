@@ -1,0 +1,18 @@
+import assert from "node:assert/strict";
+process.env.FINANCIAL_API="http://127.0.0.1:9";
+const {drivers,orders,twins}=await import("../src/store.js");
+const {createOrder}=await import("../src/services/orders.js");
+const {sendTwinMessage,observeInbound,twinContext}=await import("../src/services/twins.js");
+const created=await createOrder({companyId:"company-demo",customerPhone:"twin-sim-customer",pickup:{lat:-24.112,lng:-49.334},destination:{lat:-24.115,lng:-49.330},price:10});
+const d=drivers.get("moto-01")!;
+orders.get(created.order.id)!.assignedDriverId=d.id;
+orders.get(created.order.id)!.assignedProviderId=d.providerId;
+await sendTwinMessage(created.order.id,"CUSTOMER","Pedido recebido");
+await sendTwinMessage(created.order.id,"DRIVER","Nova oferta");
+observeInbound(created.order.id,"CUSTOMER",created.order.customerPhone,created.order.customerPhone,{messageId:"twin-customer",correlationId:"corr-customer"});
+observeInbound(created.order.id,"DRIVER",d.id,d.phone,{messageId:"twin-driver",correlationId:"corr-driver"});
+const linked=[...twins.values()].filter(t=>t.serviceId===created.order.id);
+assert.equal(linked.length,2);
+assert(linked.some(t=>t.actorType==="CUSTOMER"));
+assert(linked.some(t=>t.actorType==="DRIVER"));
+console.log(JSON.stringify({simulation:"twins",serviceId:created.order.id,twins:linked.map(t=>({actorType:t.actorType,contextVersion:t.contextVersion})),sharedServiceId:twinContext(created.order.id)?.serviceId},null,2));
