@@ -24,7 +24,8 @@
     "simulate:work-policy": "tsx scripts/simulate-work-policy.ts",
     "simulate:quotes": "tsx scripts/simulate-quotes.ts",
     "simulate:location": "tsx scripts/simulate-location.ts",
-    "simulate:dispatch": "tsx scripts/simulate-dispatch.ts"
+    "simulate:dispatch": "tsx scripts/simulate-dispatch.ts",
+    "simulate:capacity": "tsx scripts/simulate-capacity.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
