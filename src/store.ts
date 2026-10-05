@@ -1,4 +1,4 @@
-import type {Company,Driver,Order,Payment,Shift} from "./domain.js";
+import type {Company,Driver,Order,Payment,Shift,WorkPolicy} from "./domain.js";
 import {clearCollection,deleteEntity,entityExists,history,readEntity,readEntities,resetDatabase as resetPersistentDatabase,setEntity,transaction,updateEntityProperty} from "./persistence/database.js";
 
 type Entity={id:string}&Record<string,unknown>;
@@ -56,6 +56,7 @@ export const drivers=new PersistentMap<Driver>("drivers");
 export const shifts=new PersistentMap<Shift>("shifts");
 export const orders=new PersistentMap<Order>("orders");
 export const payments=new PersistentMap<Payment>("payments");
+export const workPolicies=new PersistentMap<WorkPolicy>("work_policies");
 
 const listeners=new Set<()=>void>();
 export function changed(){for(const listener of listeners)listener()}
@@ -72,8 +73,14 @@ const seeds={
     {id:"moto-03",name:"Marcos",phone:"5515999990003",city:"Itararé",status:"OFFLINE",completedToday:0,activeSecondsToday:0,earnedToday:0,deliveries:0}
   ],
   shifts:[],
+  work_policies:[
+    {id:"moto-01",driverId:"moto-01",maxShiftSeconds:4*60*60,requiredRestSeconds:60*60,enabled:true},
+    {id:"moto-02",driverId:"moto-02",maxShiftSeconds:4*60*60,requiredRestSeconds:60*60,enabled:true},
+    {id:"moto-03",driverId:"moto-03",maxShiftSeconds:4*60*60,requiredRestSeconds:60*60,enabled:true}
+  ],
   orders:[],
-  payments:[]
+  payments:[],
+  work_policies:[]
 } satisfies Record<string,Record<string,unknown>[]>;
 
 function ensureSeeds(){
