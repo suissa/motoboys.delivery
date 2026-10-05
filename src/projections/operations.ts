@@ -14,7 +14,7 @@ export function companyView(c:Company){return projection("companies",c.id,{id:c.
 export function driverView(d:Driver){return projection("drivers",d.id,{
   id:d.id,name:d.name,companyId:d.companyId,city:d.city,status:d.status,
   location:d.location,locationAt:d.locationAt,sessionId:d.sessionId,sessionStartedAt:d.sessionStartedAt,
-  restUntil:d.restUntil,completedToday:d.completedToday,activeSecondsToday:d.activeSecondsToday,
+  restUntil:d.restUntil,workDate:d.workDate,activeSinceAt:d.activeSinceAt,completedToday:d.completedToday,activeSecondsToday:d.activeSecondsToday,
   earnedToday:d.earnedToday,lastAssignedAt:d.lastAssignedAt,deliveries:d.deliveries
 })}
 export function shiftView(s:Shift){return projection("shifts",s.id,{
