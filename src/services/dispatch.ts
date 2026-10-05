@@ -4,7 +4,7 @@ import {rankCandidates} from "./queue.js";
 import {beginServiceLocation,endDriverLocation} from "./location.js";
 import {emitDomainEvent} from "../events.js";
 import {driverView,orderView} from "../projections/operations.js";
-import {whatsapp} from "./whatsapp.js";
+import {sendTwinMessage} from "./twins.js";
 import type {Order,OrderStatus} from "../domain.js";
 
 const OFFER_TTL=Number(process.env.DISPATCH_OFFER_TTL_SECONDS??60);
@@ -54,7 +54,7 @@ export function createDispatchOffer(orderId:string){
   const timer=setTimeout(()=>expireDispatchOffers(),OFFER_TTL*1000);
   (timer as NodeJS.Timeout).unref?.();
   const d=result.assignedDriverId?drivers.get(result.assignedDriverId):undefined;
-  if(d)whatsapp.send({to:d.phone,text:`Nova entrega ${result.id.slice(0,8)}. Responda ACEITAR ou RECUSAR.`}).catch(()=>{});
+  if(d)sendTwinMessage(result.id,"DRIVER",`Nova entrega ${result.id.slice(0,8)}. Responda ACEITAR ou RECUSAR.`).catch(()=>{});
  }
  changed();
  return result;
