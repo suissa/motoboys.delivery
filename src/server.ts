@@ -17,13 +17,15 @@ import {driverView,orderView} from "./projections/operations.js";
 import type {LatLng,Order} from "./domain.js";
 import {normalizeWorkDay} from "./services/work-time.js";
 import {getWorkPolicy,setWorkPolicy} from "./services/work-policy.js";
+import {settlePayment,paymentWebhookSignature,verifyPaymentWebhookSignature} from "./services/finance.js";
+import crypto from "node:crypto";
 
 ensureDomainEventBaseline();
 rebuildOperationalProjections();
 
 const app=express();
 app.use(cors());
-app.use(express.json({limit:"5mb"}));
+app.use(express.json({limit:"5mb",verify:(req,_res,buf)=>{(req as express.Request & {rawBody?:Buffer}).rawBody=Buffer.from(buf)}}));
 const __dirname=path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.resolve(__dirname,"../public")));
 
