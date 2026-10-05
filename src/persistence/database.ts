@@ -59,6 +59,32 @@ database.exec(`
     FOREIGN KEY(event_id) REFERENCES domain_events(event_id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS financial_webhook_receipts(
+    idempotency_key TEXT PRIMARY KEY,
+    payload_hash TEXT NOT NULL,
+    payment_id TEXT NOT NULL,
+    processed_at TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_financial_webhook_payment
+    ON financial_webhook_receipts(payment_id);
+
+  CREATE TABLE IF NOT EXISTS settlement_ledger(
+    entry_id TEXT PRIMARY KEY,
+    payment_id TEXT NOT NULL,
+    order_id TEXT NOT NULL,
+    entry_type TEXT NOT NULL,
+    beneficiary_id TEXT NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    currency TEXT NOT NULL,
+    idempotency_key TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    UNIQUE(payment_id,entry_type)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_settlement_ledger_payment
+    ON settlement_ledger(payment_id);
+
   CREATE TABLE IF NOT EXISTS projections(
     projection_name TEXT NOT NULL,
     collection TEXT NOT NULL,
@@ -179,6 +205,47 @@ export function clearCollection(collection:string){
   });
 }
 
+export type SettlementLedgerEntry={
+  entry_id:string;
+  payment_id:string;
+  order_id:string;
+  entry_type:"PROVIDER_CREDIT"|"PLATFORM_FEE";
+  beneficiary_id:string;
+  amount_cents:number;
+  currency:string;
+  idempotency_key:string;
+  created_at:string;
+};
+
+export function getFinancialWebhookReceipt(idempotencyKey:string){
+  return database.prepare("SELECT idempotency_key,payload_hash,payment_id,processed_at FROM financial_webhook_receipts WHERE idempotency_key=?")
+    .get(idempotencyKey) as {idempotency_key:string;payload_hash:string;payment_id:string;processed_at:string}|undefined;
+}
+
+export function saveFinancialWebhookReceipt(input:{idempotencyKey:string;payloadHash:string;paymentId:string;processedAt:string}){
+  database.prepare("INSERT INTO financial_webhook_receipts(idempotency_key,payload_hash,payment_id,processed_at) VALUES(?,?,?,?)")
+    .run(input.idempotencyKey,input.payloadHash,input.paymentId,input.processedAt);
+}
+
+export function saveLedgerEntry(entry:SettlementLedgerEntry){
+  database.prepare("INSERT INTO settlement_ledger(entry_id,payment_id,order_id,entry_type,beneficiary_id,amount_cents,currency,idempotency_key,created_at) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(payment_id,entry_type) DO NOTHING")
+    .run(entry.entry_id,entry.payment_id,entry.order_id,entry.entry_type,entry.beneficiary_id,entry.amount_cents,entry.currency,entry.idempotency_key,entry.created_at);
+}
+
+export function readLedger(paymentId?:string){
+  if(paymentId)return database.prepare("SELECT entry_id,payment_id,order_id,entry_type,beneficiary_id,amount_cents,currency,idempotency_key,created_at FROM settlement_ledger WHERE payment_id=? ORDER BY entry_type").all(paymentId) as SettlementLedgerEntry[];
+  return database.prepare("SELECT entry_id,payment_id,order_id,entry_type,beneficiary_id,amount_cents,currency,idempotency_key,created_at FROM settlement_ledger ORDER BY created_at").all() as SettlementLedgerEntry[];
+}
+
+export function ledgerTotals(paymentId:string){
+  const rows=readLedger(paymentId);
+  return{
+    providerCents:rows.filter(x=>x.entry_type==="PROVIDER_CREDIT").reduce((sum,x)=>sum+x.amount_cents,0),
+    platformFeeCents:rows.filter(x=>x.entry_type==="PLATFORM_FEE").reduce((sum,x)=>sum+x.amount_cents,0),
+    count:rows.length
+  };
+}
+
 export type StoredDomainEvent={
   sequence:number;
   event_id:string;
@@ -277,6 +344,8 @@ export function history(collection?:string){
 export function resetDatabase(seeds:Record<string,Record<string,unknown>[]>){
   transaction(()=>{
     database.exec("DELETE FROM entities");
+    database.exec("DELETE FROM financial_webhook_receipts");
+    database.exec("DELETE FROM settlement_ledger");
     database.exec("DELETE FROM domain_event_projections");
     database.exec("DELETE FROM domain_events");
     database.exec("DELETE FROM projections");
