@@ -1,5 +1,5 @@
 import {spawn} from "node:child_process";
-const scripts=["geo","queue","shifts","work-time","payments","orders","whatsapp","events","persistence","api"];
+const scripts=["geo","queue","shifts","work-time","work-policy","payments","orders","whatsapp","events","persistence","api"];
 for (const name of scripts) {
   console.log("\n=== simulate:"+name+" ===");
   await new Promise<void>((resolve,reject)=>{
