@@ -38,12 +38,13 @@ export function createDispatchOffer(orderId:string){
   o.offeredAt=now.toISOString();
   o.offerExpiresAt=new Date(now.getTime()+OFFER_TTL*1000).toISOString();
   o.assignedDriverId=candidate.driver.id;
+  o.assignedProviderId=candidate.providerId;
   candidate.driver.status="BUSY";
   emitDomainEvent({
    type:"DispatchOffered",
    aggregateType:"order",
    aggregateId:o.id,
-   payload:{serviceId:o.id,driverId:candidate.driver.id,offerId,offerExpiresAt:o.offerExpiresAt,etaMinutes:candidate.etaMinutes,distanceKm:candidate.distanceKm},
+   payload:{serviceId:o.id,driverId:candidate.driver.id,providerId:candidate.providerId,offerId,offerExpiresAt:o.offerExpiresAt,etaMinutes:candidate.etaMinutes,distanceKm:candidate.distanceKm},
    projections:[orderView(o),driverView(candidate.driver)]
   });
   beginServiceLocation(candidate.driver.id,o.id);
@@ -67,6 +68,7 @@ export function acceptDispatch(orderId:string,driverId:string){
   if(o.status!=="OFFERED"||o.assignedDriverId!==driverId)throw Error("Oferta não disponível para este motorista");
   if(o.offerExpiresAt&&Date.parse(o.offerExpiresAt)<=Date.now())throw Error("Oferta expirada");
   o.status="ASSIGNED";
+  o.assignedProviderId=o.assignedProviderId??(d.providerId??d.companyId);
   o.acceptedAt=new Date().toISOString();
   o.assignedAt=o.acceptedAt;
   delete o.offerExpiresAt;
@@ -74,7 +76,7 @@ export function acceptDispatch(orderId:string,driverId:string){
   const d=drivers.get(driverId);
   if(!d)throw Error("Motoboy não encontrado");
   d.status="BUSY";
-  emitDomainEvent({type:"DispatchAccepted",aggregateType:"order",aggregateId:o.id,payload:{serviceId:o.id,driverId,acceptedAt:o.acceptedAt},projections:[orderView(o),driverView(d)]});
+  emitDomainEvent({type:"DispatchAccepted",aggregateType:"order",aggregateId:o.id,payload:{serviceId:o.id,driverId,providerId:o.assignedProviderId,acceptedAt:o.acceptedAt},projections:[orderView(o),driverView(d)]});
   beginServiceLocation(driverId,o.id);
   result=o;accepted=true;
  });
