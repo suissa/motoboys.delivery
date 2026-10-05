@@ -20,6 +20,7 @@ import {getWorkPolicy,setWorkPolicy} from "./services/work-policy.js";
 import {acceptDispatch,rejectDispatch,expireDispatchOffers,requestDeliveryConfirmation,transitionDelivery} from "./services/dispatch.js";
 import {capacityCities} from "./services/capacity.js";import {retryInsufficientCapacity} from "./services/capacity-dispatch.js";import {listProviders,registerProvider,setProviderEnabled} from "./services/providers.js";
 import {observeInbound,sendTwinMessage,twinContext,twinForService} from "./services/twins.js";
+import {log,runWithObservabilityContext,serviceAuditTimeline,newCorrelationId} from "./observability.js";
 import {shareDriverLocation,endDriverLocation,refreshLocationSessions} from "./services/location.js";
 import {settlePayment,paymentWebhookSignature,verifyPaymentWebhookSignature} from "./services/finance.js";
 import crypto from "node:crypto";
@@ -30,6 +31,7 @@ rebuildOperationalProjections();
 
 const app=express();
 app.use(cors());
+app.use((req,res,next)=>{const correlationId=String(req.header("x-correlation-id")??newCorrelationId());const match=req.path.match(/\/(?:orders|services)\/([^/]+)/);res.setHeader("x-correlation-id",correlationId);runWithObservabilityContext({correlationId,serviceId:match?.[1]},()=>{log("info","http.request",{method:req.method,path:req.path});next()})});
 app.use(express.json({limit:"5mb",verify:(req,_res,buf)=>{(req as express.Request & {rawBody?:Buffer}).rawBody=Buffer.from(buf)}}));
 const __dirname=path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.resolve(__dirname,"../public")));
@@ -170,6 +172,7 @@ app.post("/api/whatsapp/webhook",async(req,res)=>{
 
 app.post("/api/orders",async(req,res)=>{try{res.status(201).json(await createOrder(req.body))}catch(e){res.status(400).json({error:e instanceof Error?e.message:"erro"})}});
 app.get("/api/orders/:id/payment",(req,res)=>{const o=orders.get(req.params.id),p=o?.paymentId?payments.get(o.paymentId):undefined;if(!p)return res.status(404).json({error:"cobrança não encontrada"});res.json(p)});
+app.get("/api/services/:id/audit",(req,res)=>res.json({serviceId:req.params.id,timeline:serviceAuditTimeline(req.params.id)}));
 app.get("/api/services/:id/twins",(req,res)=>{const context=twinContext(req.params.id);if(!context)return res.status(404).json({error:"serviço não encontrado"});res.json({context,customerTwin:twinForService(req.params.id,"CUSTOMER"),driverTwin:twinForService(req.params.id,"DRIVER")})});
 app.get("/api/providers",(req,res)=>{const city=typeof req.query.city==="string"?req.query.city:undefined;res.json(listProviders(city))});
 app.post("/api/providers",(req,res)=>{try{res.status(201).json(registerProvider(req.body))}catch(e){res.status(409).json({error:e instanceof Error?e.message:"erro"})}});
