@@ -27,7 +27,8 @@
     "simulate:dispatch": "tsx scripts/simulate-dispatch.ts",
     "simulate:capacity": "tsx scripts/simulate-capacity.ts",
     "simulate:providers": "tsx scripts/simulate-providers.ts",
-    "simulate:twins": "tsx scripts/simulate-twins.ts"
+    "simulate:twins": "tsx scripts/simulate-twins.ts",
+    "simulate:observability": "tsx scripts/simulate-observability.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
