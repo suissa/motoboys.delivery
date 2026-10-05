@@ -17,14 +17,14 @@ test("geo calculates distance and ETA",()=>{
 });
 
 test("queue prioritizes fairness by deliveries per hour",()=>{
- for(const d of drivers.values()){d.status="AVAILABLE";d.location={lat:-24.112,lng:-49.334};d.activeSecondsToday=3600}
+ for(const d of drivers.values()){d.status="AVAILABLE";d.location={lat:-24.112,lng:-49.334};d.activeSecondsToday=3600;d.sessionId="test-session"}
  drivers.get("moto-01")!.completedToday=4; drivers.get("moto-02")!.completedToday=1; drivers.get("moto-03")!.completedToday=2;
  assert.equal(deliveriesPerHour(drivers.get("moto-02")!),1);
  assert.equal(rankCandidates({lat:-24.113,lng:-49.333})[0].driver.id,"moto-02");
 });
 
 test("queue excludes unavailable, resting and distant drivers",()=>{
- for(const d of drivers.values()){d.status="AVAILABLE";d.location={lat:-24.112,lng:-49.334};d.activeSecondsToday=3600}
+ for(const d of drivers.values()){d.status="AVAILABLE";d.location={lat:-24.112,lng:-49.334};d.activeSecondsToday=3600;d.sessionId="test-session"}
  drivers.get("moto-01")!.status="BUSY";
  drivers.get("moto-02")!.restUntil=new Date(Date.now()+60_000).toISOString();
  drivers.get("moto-03")!.location={lat:-24.5,lng:-49.9};
@@ -54,7 +54,7 @@ test("pix lifecycle creates, confirms and expires",async()=>{
 
 test("order lifecycle assigns and completes",async()=>{
  process.env.FINANCIAL_API="http://127.0.0.1:9";
- for(const d of drivers.values()){d.status="AVAILABLE";d.location={lat:-24.112,lng:-49.334};d.activeSecondsToday=3600}
+ for(const d of drivers.values()){d.status="AVAILABLE";d.location={lat:-24.112,lng:-49.334};d.activeSecondsToday=3600;d.sessionId="test-session"}
  const {order,payment}=await createOrder({companyId:"company-demo",customerPhone:"x",pickup:{lat:-24.112,lng:-49.334},destination:{lat:-24.115,lng:-49.330},price:12.5});
  confirmPayment(payment.id); const assigned=await onPaymentConfirmed(payment.id);
  assert.equal(assigned.status,"ASSIGNED"); assert(assigned.assignedDriverId);
@@ -65,7 +65,7 @@ test("order lifecycle assigns and completes",async()=>{
 
 test("order completion rejects invalid confirmation code",async()=>{
  process.env.FINANCIAL_API="http://127.0.0.1:9";
- for(const d of drivers.values()){d.status="AVAILABLE";d.location={lat:-24.112,lng:-49.334}}
+ for(const d of drivers.values()){d.status="AVAILABLE";d.location={lat:-24.112,lng:-49.334};d.sessionId="test-session"}
  const {order,payment}=await createOrder({companyId:"company-demo",customerPhone:"x",pickup:{lat:-24.112,lng:-49.334},destination:{lat:-24.115,lng:-49.330},price:10});
  confirmPayment(payment.id); const assigned=await onPaymentConfirmed(payment.id); assigned.confirmationCode="123456";assigned.status="AWAITING_CONFIRMATION";
  assert.equal(completeOrder(order.id,"000000"),false); assert.equal(order.status,"AWAITING_CONFIRMATION");
