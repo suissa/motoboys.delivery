@@ -1,7 +1,7 @@
 export type LatLng = { lat:number; lng:number };
 export type DriverStatus = "AVAILABLE"|"BUSY"|"RESTING"|"OFFLINE";
 export type OrderStatus = "AWAITING_PAYMENT"|"PAID"|"SEARCHING_DRIVER"|"ASSIGNED"|"PICKED_UP"|"IN_TRANSIT"|"AWAITING_CONFIRMATION"|"COMPLETED"|"CANCELLED";
-export interface Driver { id:string; name:string; phone:string; companyId?:string; city:string; status:DriverStatus; location?:LatLng; locationAt?:string; sessionId?:string; sessionStartedAt?:string; restUntil?:string; completedToday:number; activeSecondsToday:number; earnedToday:number; lastAssignedAt?:string; deliveries:number; }
+export interface Driver { id:string; name:string; phone:string; companyId?:string; city:string; status:DriverStatus; location?:LatLng; locationAt?:string; sessionId?:string; sessionStartedAt?:string; restUntil?:string; completedToday:number; activeSecondsToday:number; earnedToday:number; workDate?:string; activeSinceAt?:string; lastAssignedAt?:string; deliveries:number; }
 export interface Shift { id:string; driverId:string; startedAt:string; endsAt:string; restSecondsRequired:number; status:"ACTIVE"|"ENDED"|"RESTING"; }
 export interface Order { id:string; companyId:string; customerPhone:string; pickup:LatLng; destination:LatLng; price:number; platformFee:number; status:OrderStatus; paymentId?:string; assignedDriverId?:string; confirmationCode?:string; createdAt:string; paidAt?:string; assignedAt?:string; completedAt?:string; photoUrl?:string; paymentExpiresAt?:string; }
 export interface Company { id:string; name:string; city:string; phone:string; }
