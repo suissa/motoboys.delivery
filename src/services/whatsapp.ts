@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import type {LatLng,OutboundMessage} from "../domain.js";
+import {log} from "../observability.js";
 
 export type IncomingWhatsApp={
  id?:string;
@@ -16,7 +17,7 @@ export interface WhatsAppGateway{
 }
 
 class MockWhatsApp implements WhatsAppGateway{
- async send(m:OutboundMessage){console.log("[WHATSAPP OUT]",JSON.stringify(m))}
+ async send(m:OutboundMessage){log("info","whatsapp.mock.outbound",{hasText:!!m.text,hasLocation:!!m.location,recipientPresent:!!m.to})}
 }
 
 export type OfficialConfig={
