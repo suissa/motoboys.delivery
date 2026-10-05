@@ -6,7 +6,7 @@ import fs from "node:fs/promises";
 import {fileURLToPath} from "node:url";
 import YAML from "yaml";
 import {companies,drivers,orders,payments,shifts,subscribe,changed,transaction} from "./store.js";
-import {parseIncomingMany,verifyOfficialWebhook,verifyWebhookChallenge,whatsapp,whatsappMode} from "./services/whatsapp.js";
+import {parseIncomingMany,verifyOfficialWebhook,verifyWebhookChallenge,whatsappMode} from "./services/whatsapp.js";
 import {startShift,endShift,enforceRest,refreshRestStates} from "./services/shifts.js";
 import {createOrder,onPaymentConfirmed,completeOrder} from "./services/orders.js";
 import {confirmPayment} from "./services/payments.js";
@@ -19,6 +19,7 @@ import {normalizeWorkDay} from "./services/work-time.js";
 import {getWorkPolicy,setWorkPolicy} from "./services/work-policy.js";
 import {acceptDispatch,rejectDispatch,expireDispatchOffers,requestDeliveryConfirmation,transitionDelivery} from "./services/dispatch.js";
 import {capacityCities} from "./services/capacity.js";import {retryInsufficientCapacity} from "./services/capacity-dispatch.js";import {listProviders,registerProvider,setProviderEnabled} from "./services/providers.js";
+import {observeInbound,sendTwinMessage,twinContext,twinForService} from "./services/twins.js";
 import {shareDriverLocation,endDriverLocation,refreshLocationSessions} from "./services/location.js";
 import {settlePayment,paymentWebhookSignature,verifyPaymentWebhookSignature} from "./services/finance.js";
 import crypto from "node:crypto";
@@ -114,6 +115,8 @@ async function handleIncomingWhatsApp(i:any,correlationId:string){
   if(t==="iniciar turno")startShift(d.id);
   if(t==="encerrar turno")endShift(d.id);
   if(t==="descansar")enforceRest(d.id);
+  const correlatedOrder=[...orders.values()].find(x=>x.assignedDriverId===d.id&&!["COMPLETED","CANCELLED"].includes(x.status));
+  if(correlatedOrder)observeInbound(correlatedOrder.id,"DRIVER",d.id,d.phone,{messageId:i.id,correlationId});
   const offer=[...orders.values()].find(x=>x.assignedDriverId===d.id&&x.status==="OFFERED");
   if(offer&&["aceitar","aceito","aceitar entrega"].includes(t))acceptDispatch(offer.id,d.id);
   if(offer&&["recusar","recuso","recusar entrega"].includes(t))rejectDispatch(offer.id,d.id);
@@ -122,7 +125,7 @@ async function handleIncomingWhatsApp(i:any,correlationId:string){
   if(active&&["em trânsito","em transito","saiu"].includes(t))transitionDelivery(active.id,"IN_TRANSIT",d.id);
   if(active&&["cheguei","cheguei no destino","cheguei ao destino"].includes(t))transitionDelivery(active.id,"ARRIVED",d.id);
   const code=i.text?.match(/\b\d{6}\b/)?.[0],o=[...orders.values()].find(x=>x.assignedDriverId===d.id&&x.status==="AWAITING_CONFIRMATION");
-  if(code&&o&&completeOrder(o.id,code))await whatsapp.send({to:d.phone,text:"Entrega confirmada e concluída."});
+  if(code&&o&&completeOrder(o.id,code))await sendTwinMessage(o.id,"DRIVER","Entrega confirmada e concluída.");
   if(i.mediaUrl??i.mediaId){
    const p=[...orders.values()].find(x=>x.assignedDriverId===d.id&&x.status==="ASSIGNED");
    if(p){p.photoUrl=i.mediaUrl??i.mediaId;transitionDelivery(p.id,"PICKED_UP",d.id)}
@@ -132,6 +135,8 @@ async function handleIncomingWhatsApp(i:any,correlationId:string){
  }
  const company=[...companies.values()].find(x=>x.phone===i.from);
  if(company){
+  const companyOrder=[...orders.values()].reverse().find(x=>x.companyId===company.id&&!["COMPLETED","CANCELLED"].includes(x.status));
+  if(companyOrder)observeInbound(companyOrder.id,"CUSTOMER",company.id,company.phone,{messageId:i.id,correlationId});
   if(i.mediaUrl??i.mediaId)transaction(()=>{
    const o=[...orders.values()].reverse().find(x=>x.companyId===company.id&&!x.photoUrl&&x.status!=="COMPLETED");
    if(o){o.photoUrl=i.mediaUrl??i.mediaId;emitDomainEvent({type:"PickupPhotoReceived",aggregateType:"order",aggregateId:o.id,payload:{serviceId:o.id,companyId:company.id,photoReceived:true,mediaId:i.mediaId},projections:[orderView(o)]})}
@@ -139,7 +144,8 @@ async function handleIncomingWhatsApp(i:any,correlationId:string){
   changed();
   return;
  }
- const o=[...orders.values()].find(x=>x.customerPhone===i.from&&["ASSIGNED","PICKED_UP","IN_TRANSIT","ARRIVED"].includes(x.status));
+ const o=[...orders.values()].find(x=>x.customerPhone===i.from&&["AWAITING_PAYMENT","SEARCHING_DRIVER","OFFERED","ASSIGNED","PICKED_UP","IN_TRANSIT","ARRIVED","AWAITING_CONFIRMATION"].includes(x.status));
+ if(o)observeInbound(o.id,"CUSTOMER",o.customerPhone,o.customerPhone,{messageId:i.id,correlationId});
  if(o&&i.location)transaction(()=>{o.destination=i.location;emitDomainEvent({type:"LocationShared",aggregateType:"order",aggregateId:o.id,payload:{actor:"customer",serviceId:o.id,correlationId},projections:[orderView(o)]})});
  changed();
 }
@@ -164,6 +170,7 @@ app.post("/api/whatsapp/webhook",async(req,res)=>{
 
 app.post("/api/orders",async(req,res)=>{try{res.status(201).json(await createOrder(req.body))}catch(e){res.status(400).json({error:e instanceof Error?e.message:"erro"})}});
 app.get("/api/orders/:id/payment",(req,res)=>{const o=orders.get(req.params.id),p=o?.paymentId?payments.get(o.paymentId):undefined;if(!p)return res.status(404).json({error:"cobrança não encontrada"});res.json(p)});
+app.get("/api/services/:id/twins",(req,res)=>{const context=twinContext(req.params.id);if(!context)return res.status(404).json({error:"serviço não encontrado"});res.json({context,customerTwin:twinForService(req.params.id,"CUSTOMER"),driverTwin:twinForService(req.params.id,"DRIVER")})});
 app.get("/api/providers",(req,res)=>{const city=typeof req.query.city==="string"?req.query.city:undefined;res.json(listProviders(city))});
 app.post("/api/providers",(req,res)=>{try{res.status(201).json(registerProvider(req.body))}catch(e){res.status(409).json({error:e instanceof Error?e.message:"erro"})}});
 app.put("/api/providers/:id/enabled",(req,res)=>{try{res.json(setProviderEnabled(req.params.id,Boolean(req.body.enabled)))}catch(e){res.status(404).json({error:e instanceof Error?e.message:"erro"})}});
@@ -211,7 +218,7 @@ app.post("/api/orders/:id/status",(req,res)=>{try{const next=String(req.body.sta
 app.post("/api/orders/:id/confirm",async(req,res)=>{
  try{
   const current=requestDeliveryConfirmation(req.params.id);
-  await whatsapp.send({to:current.customerPhone,text:`Código de confirmação da entrega: ${current.confirmationCode}`});
+  await sendTwinMessage(current.id,"CUSTOMER",`Código de confirmação da entrega: ${current.confirmationCode}`);
   res.json({ok:true});
  }catch(e){res.status(409).json({error:e instanceof Error?e.message:"erro"})}
 });
