@@ -1,0 +1,6 @@
+import {drivers,shifts,changed} from "../store.js"; import type {Shift} from "../domain.js";
+const DEFAULT=4*60*60,REST=60*60;
+export function startShift(id:string,seconds=DEFAULT){const d=drivers.get(id);if(!d)throw Error("Motoboy não encontrado");const now=new Date(),s:Shift={id:crypto.randomUUID(),driverId:id,startedAt:now.toISOString(),endsAt:new Date(now.getTime()+seconds*1000).toISOString(),restSecondsRequired:REST,status:"ACTIVE"};shifts.set(s.id,s);d.status="AVAILABLE";d.sessionId=s.id;d.sessionStartedAt=s.startedAt;d.restUntil=undefined;changed();return s}
+export function endShift(id:string){const d=drivers.get(id);if(!d)return;if(d.sessionId)shifts.get(d.sessionId)!.status="ENDED";d.status="OFFLINE";d.sessionId=undefined;d.sessionStartedAt=undefined;changed()}
+export function enforceRest(id:string){const d=drivers.get(id);if(!d)return;const until=new Date(Date.now()+REST*1000);d.status="RESTING";d.restUntil=until.toISOString();if(d.sessionId)shifts.get(d.sessionId)!.status="RESTING";changed();return until}
+export function refreshRestStates(){const now=Date.now();for(const d of drivers.values())if(d.status==="RESTING"&&d.restUntil&&Date.parse(d.restUntil)<=now){d.status="AVAILABLE";d.restUntil=undefined;if(d.sessionId){const s=shifts.get(d.sessionId);if(s?.status==="RESTING")s.status="ACTIVE"}}}
