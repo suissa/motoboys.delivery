@@ -22,7 +22,7 @@ export function shiftView(s:Shift){return projection("shifts",s.id,{
 })}
 export function orderView(o:Order){return projection("orders",o.id,{
   id:o.id,companyId:o.companyId,pickup:o.pickup,destination:o.destination,price:o.price,platformFee:o.platformFee,
-  status:o.status,assignedDriverId:o.assignedDriverId,createdAt:o.createdAt,paidAt:o.paidAt,
+  status:o.status,providerPrice:o.providerPrice,price:o.price,platformFee:o.platformFee,customerTotal:o.customerTotal,quote:o.quote,assignedDriverId:o.assignedDriverId,createdAt:o.createdAt,paidAt:o.paidAt,
   assignedAt:o.assignedAt,completedAt:o.completedAt,photoUrl:o.photoUrl,paymentExpiresAt:o.paymentExpiresAt
 })}
 export function paymentView(p:Payment){return projection("payments",p.id,{
