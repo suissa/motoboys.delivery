@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {drivers,resetStore} from "../../src/store.js";
+import {drivers,orders,resetStore} from "../../src/store.js";
 import {createOrder,onPaymentConfirmed} from "../../src/services/orders.js";
 import {confirmPayment} from "../../src/services/payments.js";
 import {acceptDispatch,rejectDispatch,requestDeliveryConfirmation,transitionDelivery} from "../../src/services/dispatch.js";
@@ -27,6 +27,3 @@ test("Scenario: Given a paid order, When the driver accepts the offer and progre
  const awaiting=requestDeliveryConfirmation(order.id);
  assert.equal(awaiting.status,"AWAITING_CONFIRMATION");
 });
-function ordersStatus(id:string){
- return [...drivers.values()].length>0?undefined:undefined;
-}
