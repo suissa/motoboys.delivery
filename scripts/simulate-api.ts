@@ -26,6 +26,8 @@ try{
  const firstResult=await firstPayment.json();
  assert.equal(firstPayment.status,200);
  assert.equal(firstResult.ledger.length,2);
+ const settlement=await (await fetch(`http://127.0.0.1:${port}/api/payments/${created.payment.id}/settlement`)).json();
+ assert.equal(settlement.reconciled,true);
  const repeated=await fetch(`http://127.0.0.1:${port}/api/payments/webhook`,{method:"POST",headers:paymentHeaders,body:paymentBody});
  const repeatedResult=await repeated.json();
  assert.equal(repeated.status,200);
@@ -42,7 +44,7 @@ try{
  await fetch(`http://127.0.0.1:${port}/api/whatsapp/webhook`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({message:{from:"5515999990001",text:confirmation}})});
  const completed=await (await fetch(`http://127.0.0.1:${port}/api/state`)).json();
  assert.equal(completed.orders.find((x:any)=>x.id===created.order.id).status,"COMPLETED");
- console.log(JSON.stringify({simulation:"api",stateDrivers:state.drivers.length,distanceKm:Number(distance.km.toFixed(3)),themePrimary:config.theme.primary,orderId:created.order.id,ledgerEntries:firstResult.ledger.length,repeatedWebhook:true,invalidSignatureRejected:true,finalStatus:"COMPLETED"},null,2));
+ console.log(JSON.stringify({simulation:"api",stateDrivers:state.drivers.length,distanceKm:Number(distance.km.toFixed(3)),themePrimary:config.theme.primary,orderId:created.order.id,ledgerEntries:firstResult.ledger.length,reconciled:settlement.reconciled,repeatedWebhook:true,invalidSignatureRejected:true,finalStatus:"COMPLETED"},null,2));
 }finally{
  child.kill();
  if(output.trim())console.error(output.trim());
