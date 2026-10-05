@@ -35,7 +35,7 @@ function metrics(){
  const now=Date.now(),rows=completed(),w={hour:36e5,day:864e5,week:6048e5,month:2592e6};
  const agg=(ms:number,subset=rows)=>{
   const r=subset.filter(o=>now-Date.parse(o.completedAt??o.createdAt)<=ms);
-  return{deliveries:r.length,money:r.reduce((s,o)=>s+o.price,0),platformFees:r.reduce((s,o)=>s+o.platformFee,0)}
+  return{deliveries:r.length,money:r.reduce((s,o)=>s+(o.customerTotal??o.price),0),platformFees:r.reduce((s,o)=>s+o.platformFee,0)}
  };
  return{
   city:{hour:agg(w.hour),day:agg(w.day),week:agg(w.week),month:agg(w.month)},
