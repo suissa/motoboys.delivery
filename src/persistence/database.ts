@@ -34,6 +34,30 @@ database.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_state_history_entity
     ON state_history(collection,entity_id,revision);
+
+  CREATE TABLE IF NOT EXISTS domain_events(
+    sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id TEXT NOT NULL UNIQUE,
+    transaction_id TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    aggregate_type TEXT NOT NULL,
+    aggregate_id TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    occurred_at TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_domain_events_aggregate
+    ON domain_events(aggregate_type,aggregate_id,sequence);
+
+  CREATE TABLE IF NOT EXISTS projections(
+    projection_name TEXT NOT NULL,
+    collection TEXT NOT NULL,
+    entity_id TEXT NOT NULL,
+    state_json TEXT NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY(projection_name,collection,entity_id)
+  ) WITHOUT ROWID;
 `);
 
 type DirtyState={collection:string;id:string;operation:"SET"|"UPDATE"|"DELETE";state:string|null};
@@ -41,6 +65,8 @@ let transactionDepth=0;
 let transactionId:string|undefined;
 let dirty=new Map<string,DirtyState>();
 
+export function inTransaction(){return transactionDepth>0}
+export function currentTransactionId(){return transactionId}
 export function transaction<T>(work:()=>T):T{
   const outer=transactionDepth===0;
   if(outer){
@@ -143,6 +169,71 @@ export function clearCollection(collection:string){
   });
 }
 
+export type StoredDomainEvent={
+  sequence:number;
+  event_id:string;
+  transaction_id:string;
+  event_type:string;
+  aggregate_type:string;
+  aggregate_id:string;
+  payload_json:string;
+  occurred_at:string;
+};
+
+export type ProjectionUpdate={
+  projectionName:string;
+  collection:string;
+  entityId:string;
+  state:Record<string,unknown>|null;
+};
+
+export function appendStoredEvent(event:{
+  eventId:string;
+  eventType:string;
+  aggregateType:string;
+  aggregateId:string;
+  payload:Record<string,unknown>;
+  occurredAt:string;
+}){
+  if(!inTransaction())throw Error("Eventos de domínio devem ser gravados dentro de uma transação");
+  database.prepare(`
+    INSERT INTO domain_events(event_id,transaction_id,event_type,aggregate_type,aggregate_id,payload_json,occurred_at)
+    VALUES(?,?,?,?,?,?,?)
+  `).run(event.eventId,currentTransactionId(),event.eventType,event.aggregateType,event.aggregateId,JSON.stringify(event.payload),event.occurredAt);
+}
+
+export function applyProjection(update:ProjectionUpdate){
+  if(update.state===null){
+    database.prepare("DELETE FROM projections WHERE projection_name=? AND collection=? AND entity_id=?")
+      .run(update.projectionName,update.collection,update.entityId);
+    return;
+  }
+  const json=JSON.stringify(update.state);
+  database.prepare(`
+    INSERT INTO projections(projection_name,collection,entity_id,state_json,version,updated_at)
+    VALUES(?,?,?, ?,1,?)
+    ON CONFLICT(projection_name,collection,entity_id) DO UPDATE SET
+      state_json=excluded.state_json,
+      version=projections.version+1,
+      updated_at=excluded.updated_at
+  `).run(update.projectionName,update.collection,update.entityId,json,new Date().toISOString());
+}
+
+export function readDomainEvents():StoredDomainEvent[]{
+  return database.prepare("SELECT sequence,event_id,transaction_id,event_type,aggregate_type,aggregate_id,payload_json,occurred_at FROM domain_events ORDER BY sequence").all() as StoredDomainEvent[];
+}
+
+export function readProjection(projectionName:string,collection?:string){
+  const rows=collection
+    ? database.prepare("SELECT entity_id,state_json,version,updated_at FROM projections WHERE projection_name=? AND collection=? ORDER BY entity_id").all(projectionName,collection)
+    : database.prepare("SELECT collection,entity_id,state_json,version,updated_at FROM projections WHERE projection_name=? ORDER BY collection,entity_id").all(projectionName);
+  return rows.map((row:any)=>({...row,state:JSON.parse(row.state_json)}));
+}
+
+export function clearProjections(){
+  database.exec("DELETE FROM projections");
+}
+
 export function history(collection?:string){
   if(collection){
     return database.prepare("SELECT revision,transaction_id,collection,entity_id,operation,state_json,recorded_at FROM state_history WHERE collection=? ORDER BY revision")
@@ -154,7 +245,10 @@ export function history(collection?:string){
 export function resetDatabase(seeds:Record<string,Record<string,unknown>[]>){
   transaction(()=>{
     database.exec("DELETE FROM entities");
+    database.exec("DELETE FROM domain_events");
+    database.exec("DELETE FROM projections");
     database.exec("DELETE FROM sqlite_sequence WHERE name='state_history'");
+    database.exec("DELETE FROM sqlite_sequence WHERE name='domain_events'");
     database.exec("DELETE FROM state_history");
     for(const [collection,rows] of Object.entries(seeds)){
       for(const row of rows)setEntityInCurrentTransaction(collection,String(row.id),row);
