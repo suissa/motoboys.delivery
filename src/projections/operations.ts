@@ -1,4 +1,4 @@
-import type {Company,Driver,Order,Payment,Shift,WorkPolicy} from "../domain.js";
+import type {Company,Driver,Order,Payment,Provider,Shift,WorkPolicy} from "../domain.js";
 import type {ProjectionUpdate} from "../persistence/database.js";
 
 export const OPERATIONS_PROJECTION="operations";
@@ -11,8 +11,9 @@ const projection=(collection:string,id:string,state:Record<string,unknown>|null)
 });
 
 export function companyView(c:Company){return projection("companies",c.id,{id:c.id,name:c.name,city:c.city})}
+export function providerView(p:Provider){return projection("providers",p.id,{id:p.id,name:p.name,type:p.type,city:p.city,phone:p.phone,enabled:p.enabled,createdAt:p.createdAt})}
 export function driverView(d:Driver){return projection("drivers",d.id,{
-  id:d.id,name:d.name,companyId:d.companyId,city:d.city,status:d.status,
+  id:d.id,name:d.name,companyId:d.companyId,providerId:d.providerId,city:d.city,status:d.status,
   location:d.location,locationAt:d.locationAt,sessionId:d.sessionId,sessionStartedAt:d.sessionStartedAt,
   restUntil:d.restUntil,workDate:d.workDate,activeSinceAt:d.activeSinceAt,completedToday:d.completedToday,activeSecondsToday:d.activeSecondsToday,
   earnedToday:d.earnedToday,lastAssignedAt:d.lastAssignedAt,deliveries:d.deliveries
@@ -22,7 +23,7 @@ export function shiftView(s:Shift){return projection("shifts",s.id,{
 })}
 export function orderView(o:Order){return projection("orders",o.id,{
   id:o.id,companyId:o.companyId,pickup:o.pickup,destination:o.destination,price:o.price,providerPrice:o.providerPrice,platformFee:o.platformFee,
-  status:o.status,capacityStatus:o.capacityStatus,capacityReservationId:o.capacityReservationId,customerTotal:o.customerTotal,quote:o.quote,assignedDriverId:o.assignedDriverId,dispatchOfferId:o.dispatchOfferId,offerExpiresAt:o.offerExpiresAt,offeredAt:o.offeredAt,acceptedAt:o.acceptedAt,pickedUpAt:o.pickedUpAt,inTransitAt:o.inTransitAt,arrivedAt:o.arrivedAt,createdAt:o.createdAt,paidAt:o.paidAt,
+  status:o.status,capacityStatus:o.capacityStatus,capacityReservationId:o.capacityReservationId,assignedProviderId:o.assignedProviderId,customerTotal:o.customerTotal,quote:o.quote,assignedDriverId:o.assignedDriverId,dispatchOfferId:o.dispatchOfferId,offerExpiresAt:o.offerExpiresAt,offeredAt:o.offeredAt,acceptedAt:o.acceptedAt,pickedUpAt:o.pickedUpAt,inTransitAt:o.inTransitAt,arrivedAt:o.arrivedAt,createdAt:o.createdAt,paidAt:o.paidAt,
   assignedAt:o.assignedAt,completedAt:o.completedAt,photoUrl:o.photoUrl,paymentExpiresAt:o.paymentExpiresAt
 })}
 export function paymentView(p:Payment){return projection("payments",p.id,{
