@@ -76,7 +76,9 @@ A localização deve existir apenas enquanto necessária ao serviço, sem transf
 
 **Depende de:** #2 e #3.
 
-### 8. #7 — Ciclo completo de dispatch e estados da entrega
+### 8. #7 — Ciclo completo de dispatch e estados da entrega ✅
+
+**Status:** implementada.
 
 Implementar a máquina de estados completa do serviço: busca, oferta, aceite, coleta, deslocamento, chegada, entrega, confirmação, conclusão, rejeição, timeout e requeue.
 
