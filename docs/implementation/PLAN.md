@@ -128,7 +128,7 @@ Consolidar observabilidade por `serviceId`/`correlationId`, timeline operacional
 
 **Depende de:** #3, #7, #8, #9 e #11.
 
-### 14. #15 — QA canônico: Intent, Action, Agent, Flow e E2E por canal
+### 14. #15 — QA canônico: Intent, Action, Agent, Flow e E2E por canal ✅
 
 Consolidar o contrato de qualidade sobre o sistema implementado.
 
