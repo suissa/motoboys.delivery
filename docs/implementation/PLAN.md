@@ -102,7 +102,9 @@ Expandir a capacidade para múltiplas empresas, independentes e outros provedore
 
 **Depende de:** #5 e #7.
 
-### 11. #9 — Integração oficial do WhatsApp e contrato de mensagens
+### 11. #9 — Integração oficial do WhatsApp e contrato de mensagens ✅
+
+**Status:** implementada.
 
 Substituir o adapter de simulação pela integração oficial, mantendo o domínio independente do canal.
 
