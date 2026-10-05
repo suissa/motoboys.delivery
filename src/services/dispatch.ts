@@ -49,6 +49,8 @@ export function createDispatchOffer(orderId:string){
   result=o;
  });
  if(result?.status==="OFFERED"){
+  const timer=setTimeout(()=>expireDispatchOffers(),OFFER_TTL*1000);
+  (timer as NodeJS.Timeout).unref?.();
   const d=result.assignedDriverId?drivers.get(result.assignedDriverId):undefined;
   if(d)whatsapp.send({to:d.phone,text:`Nova entrega ${result.id.slice(0,8)}. Responda ACEITAR ou RECUSAR.`}).catch(()=>{});
  }
@@ -72,6 +74,7 @@ export function acceptDispatch(orderId:string,driverId:string){
   if(!d)throw Error("Motoboy não encontrado");
   d.status="BUSY";
   emitDomainEvent({type:"DispatchAccepted",aggregateType:"order",aggregateId:o.id,payload:{serviceId:o.id,driverId,acceptedAt:o.acceptedAt},projections:[orderView(o),driverView(d)]});
+  beginServiceLocation(driverId,o.id);
   result=o;accepted=true;
  });
  if(accepted)changed();
@@ -104,6 +107,7 @@ export function rejectDispatch(orderId:string,driverId:string){
  transaction(()=>{
   const o=requireOrder(orderId);
   if(o.status!=="OFFERED"||o.assignedDriverId!==driverId)throw Error("Oferta não disponível para este motorista");
+  const previousDriverId=o.assignedDriverId;
   releaseOffer(o,"rejected");
   result=o;
   shouldRequeue=true;
@@ -119,8 +123,9 @@ export function expireDispatchOffers(){
   const now=Date.now();
   for(const o of orders.values()){
    if(o.status==="OFFERED"&&o.offerExpiresAt&&Date.parse(o.offerExpiresAt)<=now){
+    const previousDriverId=o.assignedDriverId;
     releaseOffer(o,"timeout");
-    expired.push({orderId:o.id,driverId:o.assignedDriverId});
+    expired.push({orderId:o.id,driverId:previousDriverId});
    }
   }
  });
@@ -194,7 +199,7 @@ export function cancelOrReleaseDelivery(orderId:string){
    if(d){d.status="AVAILABLE";delete d.lastAssignedAt}
   }
   o.status="CANCELLED";
-  delete o.dispatchOfferId;delete o.offerExpiresAt;
+  delete o.dispatchOfferId;delete o.offerExpiresAt;delete o.assignedDriverId;
   emitDomainEvent({type:"DeliveryCancelled",aggregateType:"order",aggregateId:o.id,payload:{serviceId:o.id,driverId},projections:[orderView(o),...(driverId&&drivers.get(driverId)?[driverView(drivers.get(driverId)!)]:[])]});
   result=o;
  });
