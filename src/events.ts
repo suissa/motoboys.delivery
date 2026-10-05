@@ -9,8 +9,8 @@ import {
   type ProjectionUpdate
 } from "./persistence/database.js";
 import {appendStoredEvent,readProjection} from "./persistence/database.js";
-import {companyView,driverView,orderView,paymentView,shiftView,OPERATIONS_PROJECTION} from "./projections/operations.js";
-import type {Company,Driver,Order,Payment,Shift} from "./domain.js";
+import {companyView,driverView,orderView,paymentView,shiftView,workPolicyView,OPERATIONS_PROJECTION} from "./projections/operations.js";
+import type {Company,Driver,Order,Payment,Shift,WorkPolicy} from "./domain.js";
 
 export type DomainEventType=
   |"ProjectionBaselineCreated"
@@ -83,18 +83,20 @@ export function ensureDomainEventBaseline(){
   const shifts=readEntities("shifts") as unknown as Shift[];
   const orders=readEntities("orders") as unknown as Order[];
   const payments=readEntities("payments") as unknown as Payment[];
+  const workPolicies=readEntities("work_policies") as unknown as WorkPolicy[];
   for(const row of companies)baseline("companies",row,companyView(row));
   for(const row of drivers)baseline("drivers",row,driverView(row));
   for(const row of shifts)baseline("shifts",row,shiftView(row));
   for(const row of orders)baseline("orders",row,orderView(row));
   for(const row of payments)baseline("payments",row,paymentView(row));
+  for(const row of workPolicies)baseline("work_policies",row,workPolicyView(row));
   const views=Object.values(projectionByCollection);
   if(!views.length)return;
   transaction(()=>{
     for(const view of views){
       emitDomainEvent({
         type:"ProjectionBaselineCreated",
-        aggregateType:view.collection==="orders"?"order":view.collection==="payments"?"payment":view.collection==="drivers"?"driver":view.collection==="shifts"?"shift":"service",
+        aggregateType:view.collection==="orders"?"order":view.collection==="payments"?"payment":view.collection==="drivers"?"driver":view.collection==="shifts"?"shift":"driver",
         aggregateId:view.entityId,
         payload:{source:"persisted-state-baseline"},
         projections:[view]
