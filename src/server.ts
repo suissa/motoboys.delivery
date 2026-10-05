@@ -17,6 +17,7 @@ import {driverView,orderView} from "./projections/operations.js";
 import type {LatLng,Order} from "./domain.js";
 import {normalizeWorkDay} from "./services/work-time.js";
 import {getWorkPolicy,setWorkPolicy} from "./services/work-policy.js";
+import {acceptDispatch,rejectDispatch,expireDispatchOffers,requestDeliveryConfirmation,transitionDelivery} from "./services/dispatch.js";
 import {shareDriverLocation,endDriverLocation,refreshLocationSessions} from "./services/location.js";
 import {settlePayment,paymentWebhookSignature,verifyPaymentWebhookSignature} from "./services/finance.js";
 import crypto from "node:crypto";
@@ -98,12 +99,19 @@ app.post("/api/whatsapp/webhook",async(req,res)=>{
   if(t==="iniciar turno")startShift(d.id);
   if(t==="encerrar turno")endShift(d.id);
   if(t==="descansar")enforceRest(d.id);
+  const offer=[...orders.values()].find(x=>x.assignedDriverId===d.id&&x.status==="OFFERED");
+  if(offer&&["aceitar","aceito","aceitar entrega"].includes(t))acceptDispatch(offer.id,d.id);
+  if(offer&&["recusar","recuso","recusar entrega"].includes(t))rejectDispatch(offer.id,d.id);
+  const active=[...orders.values()].find(x=>x.assignedDriverId===d.id&&!["COMPLETED","CANCELLED","OFFERED"].includes(x.status));
+  if(active&&["coletado","coleta confirmada"].includes(t))transitionDelivery(active.id,"PICKED_UP",d.id);
+  if(active&&["em trânsito","em transito","saiu"].includes(t))transitionDelivery(active.id,"IN_TRANSIT",d.id);
+  if(active&&["cheguei","cheguei no destino","cheguei ao destino"].includes(t))transitionDelivery(active.id,"ARRIVED",d.id);
   const code=i.text?.match(/\b\d{6}\b/)?.[0],o=[...orders.values()].find(x=>x.assignedDriverId===d.id&&x.status==="AWAITING_CONFIRMATION");
   if(code&&o&&completeOrder(o.id,code))await whatsapp.send({to:d.phone,text:"Entrega confirmada e concluída."});
-  if(i.mediaUrl)transaction(()=>{
-   const p=[...orders.values()].find(x=>x.assignedDriverId===d.id&&["ASSIGNED","PICKED_UP","IN_TRANSIT"].includes(x.status));
-   if(p){p.photoUrl=i.mediaUrl;p.status="PICKED_UP";emitDomainEvent({type:"PickupConfirmed",aggregateType:"order",aggregateId:p.id,payload:{serviceId:p.id,driverId:d.id,photoReceived:true},projections:[orderView(p),driverView(d)]})}
-  });
+  if(i.mediaUrl){
+   const p=[...orders.values()].find(x=>x.assignedDriverId===d.id&&x.status==="ASSIGNED");
+   if(p){p.photoUrl=i.mediaUrl;transitionDelivery(p.id,"PICKED_UP",d.id)}
+  }
   changed();
   return res.json({ok:true,actor:"driver"});
  }
@@ -141,13 +149,20 @@ app.post("/api/drivers/:id/shift/end",(req,res)=>{endShift(req.params.id);endDri
 app.post("/api/drivers/:id/rest",(req,res)=>res.json({until:enforceRest(req.params.id)}));
 app.get("/api/drivers/:id/work-policy",(req,res)=>{if(!drivers.get(req.params.id))return res.status(404).json({error:"motoboy não encontrado"});res.json(getWorkPolicy(req.params.id))});
 app.put("/api/drivers/:id/work-policy",(req,res)=>{try{if(!drivers.get(req.params.id))return res.status(404).json({error:"motoboy não encontrado"});res.json(setWorkPolicy(req.params.id,req.body))}catch(e){res.status(400).json({error:e instanceof Error?e.message:"erro"})}});
+app.post("/api/orders/:id/dispatch/accept",(req,res)=>{try{const driverId=String(req.body.driverId??"");if(!driverId)return res.status(400).json({error:"driverId é obrigatório"});res.json(acceptDispatch(req.params.id,driverId))}catch(e){res.status(409).json({error:e instanceof Error?e.message:"erro"})}});
+app.post("/api/orders/:id/dispatch/reject",(req,res)=>{try{const driverId=String(req.body.driverId??"");if(!driverId)return res.status(400).json({error:"driverId é obrigatório"});res.json(rejectDispatch(req.params.id,driverId))}catch(e){res.status(409).json({error:e instanceof Error?e.message:"erro"})}});
+app.post("/api/orders/:id/status",(req,res)=>{try{const next=String(req.body.status) as any;const driverId=req.body.driverId?String(req.body.driverId):undefined;res.json(transitionDelivery(req.params.id,next,driverId))}catch(e){res.status(409).json({error:e instanceof Error?e.message:"erro"})}});
 app.post("/api/orders/:id/confirm",async(req,res)=>{
- const o=orders.get(req.params.id);if(!o)return res.status(404).json({error:"pedido não encontrado"});
- transaction(()=>{const current=orders.get(req.params.id);if(!current)throw Error("pedido não encontrado");const code=String(Math.floor(1e5+Math.random()*9e5));current.confirmationCode=code;current.status="AWAITING_CONFIRMATION";emitDomainEvent({type:"ConfirmationRequested",aggregateType:"order",aggregateId:current.id,payload:{serviceId:current.id},projections:[orderView(current)]})});
- const current=orders.get(req.params.id)!;await whatsapp.send({to:current.customerPhone,text:`Código de confirmação da entrega: ${current.confirmationCode}`});changed();res.json({ok:true});
+ try{
+  const current=requestDeliveryConfirmation(req.params.id);
+  await whatsapp.send({to:current.customerPhone,text:`Código de confirmação da entrega: ${current.confirmationCode}`});
+  res.json({ok:true});
+ }catch(e){res.status(409).json({error:e instanceof Error?e.message:"erro"})}
 });
+
 app.get("/api/distance",(req,res)=>{const a:LatLng={lat:Number(req.query.lat1),lng:Number(req.query.lng1)},b:LatLng={lat:Number(req.query.lat2),lng:Number(req.query.lng2)};res.json({km:distanceKm(a,b)})});
 app.get("/{*splat}",(_q,res)=>res.sendFile(path.resolve(__dirname,"../public/index.html")));
 
 const port=Number(process.env.PORT??60060);
+const dispatchExpiryTimer=setInterval(()=>expireDispatchOffers(),1000);(dispatchExpiryTimer as NodeJS.Timeout).unref?.();
 app.listen(port,()=>console.log(`motoboys.delivery PoC em http://localhost:${port}`));
