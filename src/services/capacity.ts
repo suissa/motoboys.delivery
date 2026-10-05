@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import type {CapacityReservation,Driver} from "../domain.js";
-import {capacityReservations,companies,drivers,orders,changed,transaction} from "../store.js";
-import {refreshLocationSessions} from "./location.js";import {refreshRestStates} from "./shifts.js";import {rankCandidates} from "./queue.js";
+import {capacityReservations,companies,drivers,orders,shifts,changed,transaction} from "../store.js";
+import {refreshLocationSessions} from "./location.js";import {rankCandidates} from "./queue.js";
 import {effectiveActiveSeconds} from "./work-time.js";
 import {isDispatchEligibleByPolicy} from "./work-policy.js";
 import {emitDomainEvent} from "../events.js";
@@ -18,7 +18,9 @@ function eligibleDrivers(city:string){
  refreshLocationSessions();
  const now=new Date();
  return [...drivers.values()].filter((d:Driver)=>{
-  if(d.city!==city||d.status!=="AVAILABLE"||!d.location||!d.sessionId)return false;
+  const shift=d.sessionId?shifts.get(d.sessionId):undefined;
+  if(d.city!==city||d.status!=="AVAILABLE"||!d.location||!d.sessionId||!shift)return false;
+  if(Date.parse(shift.endsAt)<=now.getTime())return false;
   if(d.restUntil&&Date.parse(d.restUntil)>now.getTime())return false;
   const policy=isDispatchEligibleByPolicy(d.id,effectiveActiveSeconds(d,now),undefined);
   return policy.eligible;
@@ -50,7 +52,6 @@ export function reserveCapacityForOrder(orderId:string){
  transaction(()=>{
   const order=orders.get(orderId);
   if(!order)throw Error("Pedido não encontrado");
-  refreshRestStates();
   const company=companies.get(order.companyId);
   if(!company)throw Error("Empresa não encontrada");
   const existing=order.capacityReservationId?capacityReservations.get(order.capacityReservationId):undefined;
