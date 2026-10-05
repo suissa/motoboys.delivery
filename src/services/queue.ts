@@ -1,5 +1,5 @@
-import {drivers} from "../store.js"; import type {Driver,LatLng} from "../domain.js"; import {distanceKm,etaMinutes} from "./geo.js";
+import {drivers} from "../store.js"; import type {Driver,LatLng} from "../domain.js"; import {distanceKm,etaMinutes} from "./geo.js";import {effectiveActiveSeconds,effectiveCompletedToday} from "./work-time.js";
 export type Candidate={driver:Driver;deliveriesPerHour:number;distanceKm:number;etaMinutes:number};
-export function deliveriesPerHour(d:Driver){return d.completedToday/Math.max(d.activeSecondsToday/3600,1/60)}
+export function deliveriesPerHour(d:Driver){const active=effectiveActiveSeconds(d),completed=effectiveCompletedToday(d);return completed/Math.max(active/3600,1/60)}
 export function rankCandidates(origin:LatLng,maxEta=30):Candidate[]{const now=Date.now();return [...drivers.values()].filter(d=>d.status==="AVAILABLE"&&d.location).map(d=>{const km=distanceKm(d.location!,origin);return{driver:d,deliveriesPerHour:deliveriesPerHour(d),distanceKm:km,etaMinutes:etaMinutes(km)}}).filter(c=>c.etaMinutes<=maxEta).filter(c=>!c.driver.restUntil||Date.parse(c.driver.restUntil)<=now).sort((a,b)=>{const rate=a.deliveriesPerHour-b.deliveriesPerHour;if(Math.abs(rate)>.05)return rate;const la=a.driver.lastAssignedAt?Date.parse(a.driver.lastAssignedAt):0,lb=b.driver.lastAssignedAt?Date.parse(b.driver.lastAssignedAt):0;return la!==lb?la-lb:a.distanceKm-b.distanceKm})}
 export function chooseDriver(origin:LatLng){return rankCandidates(origin)[0]}
