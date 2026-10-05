@@ -8,10 +8,10 @@ PoC de uma rede de entregas com fila rotacional, justiça por entregas/hora, geo
 - Haversine + ETA.
 - Turnos de 4h e descanso de 1h.
 - Webhook WhatsApp para mensagens, geolocalização e mídia.
-- Gateway WhatsApp atrás de interface, atualmente mock.
-- Cobrança em `FINANCIAL_API/cobranca` com `{ price: Number }`.
+- Gateway WhatsApp atrás de interface, com modo mock para simulação e adapter oficial Cloud API.
+- Cobrança em `FINANCIAL_API/cobranca` com total cobrado do cliente.
 - QR Code, Pix copia-e-cola e expiração.
-- Webhook de confirmação do pagamento.
+- Webhook financeiro assinado, idempotente e reconciliado em ledger.
 - Mensagem ao cliente com localização e ETA do motoboy.
 - Código de confirmação enviado ao cliente e validado pelo motoboy.
 - Recebimento de foto do produto via WhatsApp da empresa/motoboy.
@@ -53,10 +53,10 @@ Abra `http://localhost:60060`.
 7. O motoboy aceita ou recusa a oferta.
 8. Após aceite, a entrega passa por coleta, trânsito e chegada.
 9. O cliente recebe o código de confirmação após a chegada.
-7. A empresa pode enviar a foto do produto pelo webhook WhatsApp.
-8. `POST /api/orders/:id/confirm` gera e envia o código ao cliente.
-9. O cliente informa o código ao motoboy.
-10. O webhook valida o código e conclui a entrega.
+10. A empresa pode enviar a foto do produto pelo webhook WhatsApp.
+11. A entrega só pode receber o código após a chegada.
+12. O motoboy informa o código pelo canal mediado.
+13. O webhook valida o código e conclui a entrega.
 
 ## Exemplos
 
@@ -64,7 +64,9 @@ Abra `http://localhost:60060`.
 curl -X POST http://localhost:60060/api/orders -H 'content-type: application/json' -d '{"companyId":"company-demo","customerPhone":"5515999992000","pickup":{"lat":-24.112,"lng":-49.334},"destination":{"lat":-24.115,"lng":-49.330},"price":12.5}'
 curl -X POST http://localhost:60060/api/drivers/moto-01/shift/start
 curl -X POST http://localhost:60060/api/drivers/moto-01/location -H 'content-type: application/json' -d '{"lat":-24.112,"lng":-49.334}'
-curl -X POST http://localhost:60060/api/payments/webhook -H 'content-type: application/json' -d '{"paymentId":"<payment-id>"}'
+BODY='{"paymentId":"<payment-id>"}'
+SIGNATURE=$(printf '%s' "$BODY" | openssl dgst -sha256 -hmac "$FINANCIAL_WEBHOOK_SECRET" | sed 's/^.* //')
+curl -X POST http://localhost:60060/api/payments/webhook -H 'content-type: application/json' -H "x-financial-signature: sha256=$SIGNATURE" -H 'idempotency-key: example-1' -d "$BODY"
 ```
 
 Webhook WhatsApp:
@@ -77,7 +79,7 @@ Webhook WhatsApp:
 
 O estado operacional usa SQLite por padrão em `data/motoboys.sqlite` (`MOTOBOYS_DB_FILE`). As mutações passam por transações SQLite, com `WAL` e `synchronous=FULL`. Cada transação grava um histórico recuperável em `state_history`.
 
-O próximo passo de arquitetura é separar esse histórico de persistência do Event Log de domínio da issue #3.
+O `state_history` preserva mutações persistidas; o `domain_events` preserva fatos de negócio e alimenta projeções reconstruíveis.
 
 ## Produção
 
@@ -134,7 +136,7 @@ Os testes cobrem geometria/ETA, fila de justiça, elegibilidade por distância/s
 
 ## Implementação em andamento
 
-A ordem oficial de implementação está em `docs/implementation/PLAN.md`. As issues #2, #3, #4, #13, #12, #8, #10, #7 e #5 já estão implementadas. A #6 também está implementada; as demais seguem a sequência definida no plano.
+A ordem oficial de implementação está em `docs/implementation/PLAN.md`. As issues #2, #3, #4, #13, #12, #8, #10, #7, #5, #6, #9, #11 e #14 estão implementadas; a #15 fecha a suíte canônica.
 
 ## Lacunas planejadas
 
