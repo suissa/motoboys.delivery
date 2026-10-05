@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import {appendStoredEvent,applyProjection,clearProjections,readDomainEvents,readEntities,readEventProjections,readProjection,transaction,type ProjectionUpdate} from "./persistence/database.js";
 import {companyView,driverView,orderView,paymentView,providerView,shiftView,workPolicyView,OPERATIONS_PROJECTION} from "./projections/operations.js";
-import type {Company,Driver,Order,Payment,Provider,Shift,WorkPolicy} from "./domain.js";
+import type {Company,ConversationalTwin,Driver,Order,Payment,Provider,Shift,WorkPolicy} from "./domain.js";
 
 export type DomainEventType=
 |"ProjectionBaselineCreated"
@@ -36,7 +36,10 @@ export type DomainEventType=
 |"CapacityReleased"
 |"CapacityInsufficient"
 |"ProviderRegistered"
-|"ProviderUpdated";
+|"ProviderUpdated"
+|"TwinCreated"
+|"TwinContextUpdated"
+|"TwinContextClosed";
 
 export type DomainEventAggregate="service"|"order"|"payment"|"driver"|"shift"|"provider"|"twin"|"message";
 
@@ -80,6 +83,7 @@ export function ensureDomainEventBaseline(){
  const orders=readEntities("orders") as unknown as Order[];
  const payments=readEntities("payments") as unknown as Payment[];
  const workPolicies=readEntities("work_policies") as unknown as WorkPolicy[];
+ const twins=readEntities("twins") as unknown as ConversationalTwin[];
  for(const row of companies)views.push(companyView(row));
  for(const row of providers)views.push(providerView(row));
  for(const row of drivers)views.push(driverView(row));
@@ -87,10 +91,11 @@ export function ensureDomainEventBaseline(){
  for(const row of orders)views.push(orderView(row));
  for(const row of payments)views.push(paymentView(row));
  for(const row of workPolicies)views.push(workPolicyView(row));
+ for(const row of twins)views.push({projectionName:OPERATIONS_PROJECTION,collection:"twins",entityId:row.id,state:{id:row.id,serviceId:row.serviceId,actorType:row.actorType,actorId:row.actorId,channel:row.channel,contextVersion:row.contextVersion,state:row.state,lastInboundAt:row.lastInboundAt,lastOutboundAt:row.lastOutboundAt,lastMessageId:row.lastMessageId,lastCorrelationId:row.lastCorrelationId}});
  if(!views.length)return;
  transaction(()=>{
   for(const view of views){
-   const aggregateType=view.collection==="orders"?"order":view.collection==="payments"?"payment":view.collection==="drivers"?"driver":view.collection==="shifts"?"shift":view.collection==="providers"?"provider":"driver";
+   const aggregateType=view.collection==="orders"?"order":view.collection==="payments"?"payment":view.collection==="drivers"?"driver":view.collection==="shifts"?"shift":view.collection==="providers"?"provider":view.collection==="twins"?"twin":"driver";
    emitDomainEvent({
     type:"ProjectionBaselineCreated",
     aggregateType:aggregateType as DomainEventAggregate,
