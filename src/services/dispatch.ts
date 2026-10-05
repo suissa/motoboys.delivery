@@ -108,25 +108,25 @@ export function rejectDispatch(orderId:string,driverId:string){
   result=o;
   shouldRequeue=true;
  });
- if(shouldRequeue)createDispatchOffer(orderId);
+ if(shouldRequeue){endDriverLocation(driverId,orderId);createDispatchOffer(orderId)}
  else changed();
  return result!;
 }
 
 export function expireDispatchOffers(){
- const expired:string[]=[];
+ const expired:Array<{orderId:string;driverId?:string}>=[];
  transaction(()=>{
   const now=Date.now();
   for(const o of orders.values()){
    if(o.status==="OFFERED"&&o.offerExpiresAt&&Date.parse(o.offerExpiresAt)<=now){
     releaseOffer(o,"timeout");
-    expired.push(o.id);
+    expired.push({orderId:o.id,driverId:o.assignedDriverId});
    }
   }
  });
- for(const id of expired)createDispatchOffer(id);
+ for(const item of expired){if(item.driverId)endDriverLocation(item.driverId,item.orderId);createDispatchOffer(item.orderId)}
  if(expired.length)changed();
- return expired;
+ return expired.map(x=>x.orderId);
 }
 
 export function dispatchSearch(orderId:string){
@@ -147,6 +147,20 @@ const validTransitions:Record<OrderStatus,OrderStatus[]>={
  COMPLETED:[],
  CANCELLED:[],
 };
+
+export function requestDeliveryConfirmation(orderId:string){
+ let result:Order|undefined;
+ transaction(()=>{
+  const o=requireOrder(orderId);
+  if(o.status!=="ARRIVED")throw Error("A entrega só pode ser confirmada após a chegada");
+  o.status="AWAITING_CONFIRMATION";
+  o.confirmationCode=String(Math.floor(1e5+Math.random()*9e5));
+  emitDomainEvent({type:"ConfirmationRequested",aggregateType:"order",aggregateId:o.id,payload:{serviceId:o.id,driverId:o.assignedDriverId},projections:[orderView(o)]});
+  result=o;
+ });
+ changed();
+ return result!;
+}
 
 export function transitionDelivery(orderId:string,next:OrderStatus,actorDriverId?:string){
  let result:Order|undefined;
