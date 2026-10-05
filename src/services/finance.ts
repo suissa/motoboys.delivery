@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import {getFinancialWebhookReceipt,ledgerTotals,readLedger,saveFinancialWebhookReceipt,saveLedgerEntry,transaction} from "../persistence/database.js";
-import type {Payment} from "../domain.js";
+import type {Payment} from "../domain.js";import {emitDomainEvent} from "../events.js";import {paymentView} from "../projections/operations.js";
 
 const SECRET_ENV="FINANCIAL_WEBHOOK_SECRET";
 
@@ -28,7 +28,8 @@ export function settlePayment(payment:Payment,idempotencyKey:string,payloadHash:
   }
 
   if(payment.status==="EXPIRED")throw Error("Cobrança expirada");
-  if(payment.status==="PENDING")payment.status="PAID";
+  const wasPending=payment.status==="PENDING";
+  if(wasPending)payment.status="PAID";
 
   const now=new Date().toISOString();
   saveLedgerEntry({
@@ -59,6 +60,7 @@ export function settlePayment(payment:Payment,idempotencyKey:string,payloadHash:
    throw Error("Ledger não reconcilia com o valor cobrado");
   }
 
+  if(wasPending)emitDomainEvent({type:"PaymentConfirmed",aggregateType:"payment",aggregateId:payment.id,payload:{paymentId:payment.id,orderId:payment.orderId,customerTotal:payment.price,providerPrice:payment.providerPrice,platformFee:payment.platformFee},projections:[paymentView(payment)]});
   saveFinancialWebhookReceipt({
    idempotencyKey,
    payloadHash,
