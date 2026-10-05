@@ -23,6 +23,7 @@ export type DomainEventType=
   |"DispatchAccepted"
   |"LocationShared"
   |"PickupConfirmed"
+  |"PickupPhotoReceived"
   |"DeliveryConfirmed"
   |"ConfirmationRequested"
   |"ShiftStarted"
