@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import {appendStoredEvent,applyProjection,clearProjections,readDomainEvents,readEntities,readEventProjections,readProjection,transaction,type ProjectionUpdate} from "./persistence/database.js";
 import {companyView,driverView,orderView,paymentView,providerView,shiftView,workPolicyView,OPERATIONS_PROJECTION} from "./projections/operations.js";
 import type {Company,ConversationalTwin,Driver,Order,Payment,Provider,Shift,WorkPolicy} from "./domain.js";
+import {currentObservabilityContext} from "./observability.js";
 
 export type DomainEventType=
 |"ProjectionBaselineCreated"
@@ -52,12 +53,15 @@ export function emitDomainEvent(input:{
 }){
  const occurredAt=new Date().toISOString();
  const eventId=crypto.randomUUID();
+ const context=currentObservabilityContext();
+ const serviceId=String(input.payload.serviceId??(input.aggregateType==="service"||input.aggregateType==="order"?input.aggregateId:""))||undefined;
+ const payload={...input.payload,...(context?.correlationId&&!input.payload.correlationId?{correlationId:context.correlationId}:{}),...(serviceId&&!input.payload.serviceId?{serviceId}: {})};
  appendStoredEvent({
   eventId,
   eventType:input.type,
   aggregateType:input.aggregateType,
   aggregateId:input.aggregateId,
-  payload:input.payload,
+  payload,
   occurredAt,
   projections:input.projections??[]
  });
