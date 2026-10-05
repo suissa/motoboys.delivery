@@ -79,8 +79,7 @@ const seeds={
     {id:"moto-03",driverId:"moto-03",maxShiftSeconds:4*60*60,requiredRestSeconds:60*60,enabled:true}
   ],
   orders:[],
-  payments:[],
-  work_policies:[]
+  payments:[]
 } satisfies Record<string,Record<string,unknown>[]>;
 
 function ensureSeeds(){
