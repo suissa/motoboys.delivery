@@ -16,7 +16,7 @@ export function currentObservabilityContext(){
 }
 
 const SECRET_KEYS=new Set(["phone","customerPhone","pixCopyPaste","qrCodeDataUrl","accessToken","authorization","token","secret","appSecret","verifyToken","rawBody"]);
-const PRIVATE_KEYS=new Set(["location","pickup","destination"]);
+const PRIVATE_KEYS=new Set(["location","pickup","destination","actorId","from","to"]);
 
 export function sanitizeForLog(value:unknown):unknown{
  if(value===null||typeof value!=="object")return value;
