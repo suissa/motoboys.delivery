@@ -5,6 +5,8 @@ export interface Driver { id:string; name:string; phone:string; companyId?:strin
 export interface Shift { id:string; driverId:string; startedAt:string; endsAt:string; restSecondsRequired:number; status:"ACTIVE"|"ENDED"|"RESTING"; }
 export type LocationPurpose="WORK_START"|"DISPATCH"|"ACTIVE_SERVICE";
 export type LocationScope="NETWORK"|"SERVICE";
+export type CapacityStatus="UNKNOWN"|"PROMISED"|"INSUFFICIENT"|"RELEASED";
+export interface CapacityReservation { id:string; orderId:string; city:string; reservedAt:string; status:"ACTIVE"|"RELEASED"; releasedAt?:string; }
 export interface LocationSession { id:string; actorType:"DRIVER"|"CUSTOMER"; actorId:string; serviceId?:string; purpose:LocationPurpose; scope:LocationScope; startedAt:string; expiresAt:string; }
 export interface Quote { providerPrice:number; platformFee:number; customerTotal:number; providerPriceSource:{type:"PROVIDER";id:string}; platformFeeSource:{type:"PLATFORM";id:string}; quotedAt:string; }
 export interface Order { id:string; companyId:string; customerPhone:string; pickup:LatLng; destination:LatLng; price:number; providerPrice:number; platformFee:number; customerTotal:number; quote:Quote; status:OrderStatus; paymentId?:string; assignedDriverId?:string; dispatchOfferId?:string; dispatchExcludedDriverIds?:string[]; offerExpiresAt?:string; offeredAt?:string; acceptedAt?:string; pickedUpAt?:string; inTransitAt?:string; arrivedAt?:string; confirmationCode?:string; createdAt:string; paidAt?:string; assignedAt?:string; completedAt?:string; photoUrl?:string; paymentExpiresAt?:string; }
