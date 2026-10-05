@@ -29,6 +29,7 @@ PoC de uma rede de entregas com fila rotacional, justiça por entregas/hora, geo
 - Dispatch explícito com oferta, aceite, rejeição, timeout, requeue, coleta, trânsito, chegada e confirmação.
 - Capacidade de rede por cidade, com reservas comprometidas e estado explícito de insuficiência.
 - Rede multi-provider com empresas e independentes, elegibilidade por provider e `assignedProviderId` auditável.
+- Conversational Twins independentes para cliente e motorista, sincronizados pelo `serviceId` e mediados pela plataforma.
 - Toda propriedade visual está em `src/configs/layout.yml`; o frontend recebe o YAML por `/api/config/layout` e transforma os valores em CSS custom properties em runtime.
 
 ## Execução
@@ -80,7 +81,7 @@ O próximo passo de arquitetura é separar esse histórico de persistência do E
 
 ## Produção
 
-Persistência transacional, Event Log/projeções, contabilização de jornada, WorkPolicy, quote por prestador, liquidação financeira idempotente, localização temporária e dispatch completo estão implementados. Ainda permanecem: autenticação/autorização, observabilidade e um provedor oficial de WhatsApp.
+Persistência transacional, Event Log/projeções, contabilização de jornada, WorkPolicy, quote por prestador, liquidação financeira idempotente, localização temporária e dispatch completo estão implementados. Ainda permanecem: autenticação/autorização, observabilidade e QA canônico.
 
 
 ## Simulações executáveis
@@ -99,6 +100,7 @@ npm run simulate:payments
 npm run simulate:dispatch
 npm run simulate:capacity
 npm run simulate:providers
+npm run simulate:twins
 npm run simulate:orders
 npm run simulate:whatsapp
 npm run simulate:events
