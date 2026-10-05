@@ -84,7 +84,9 @@ Implementar a máquina de estados completa do serviço: busca, oferta, aceite, c
 
 **Depende de:** #3, #4, #8 e #10.
 
-### 9. #5 — Garantia de capacidade da rede de motoboys
+### 9. #5 — Garantia de capacidade da rede de motoboys ✅
+
+**Status:** implementada.
 
 Depois que o dispatch individual estiver correto, implementar capacidade da rede por cidade e janela de tempo.
 
