@@ -18,7 +18,7 @@ import type {LatLng,Order} from "./domain.js";
 import {normalizeWorkDay} from "./services/work-time.js";
 import {getWorkPolicy,setWorkPolicy} from "./services/work-policy.js";
 import {acceptDispatch,rejectDispatch,expireDispatchOffers,requestDeliveryConfirmation,transitionDelivery} from "./services/dispatch.js";
-import {capacityCities} from "./services/capacity.js";import {retryInsufficientCapacity} from "./services/capacity-dispatch.js";
+import {capacityCities} from "./services/capacity.js";import {retryInsufficientCapacity} from "./services/capacity-dispatch.js";import {listProviders,registerProvider,setProviderEnabled} from "./services/providers.js";
 import {shareDriverLocation,endDriverLocation,refreshLocationSessions} from "./services/location.js";
 import {settlePayment,paymentWebhookSignature,verifyPaymentWebhookSignature} from "./services/finance.js";
 import crypto from "node:crypto";
@@ -70,6 +70,7 @@ function snapshot(){
   orders:os,
   payments:ps,
   workPolicies:projected("work_policies"),
+  providers:projected("providers"),
   capacity:capacityCities(),
   metrics:metrics(),
   totals:{
@@ -134,6 +135,9 @@ app.post("/api/whatsapp/webhook",async(req,res)=>{
 
 app.post("/api/orders",async(req,res)=>{try{res.status(201).json(await createOrder(req.body))}catch(e){res.status(400).json({error:e instanceof Error?e.message:"erro"})}});
 app.get("/api/orders/:id/payment",(req,res)=>{const o=orders.get(req.params.id),p=o?.paymentId?payments.get(o.paymentId):undefined;if(!p)return res.status(404).json({error:"cobrança não encontrada"});res.json(p)});
+app.get("/api/providers",(req,res)=>{const city=typeof req.query.city==="string"?req.query.city:undefined;res.json(listProviders(city))});
+app.post("/api/providers",(req,res)=>{try{res.status(201).json(registerProvider(req.body))}catch(e){res.status(409).json({error:e instanceof Error?e.message:"erro"})}});
+app.put("/api/providers/:id/enabled",(req,res)=>{try{res.json(setProviderEnabled(req.params.id,Boolean(req.body.enabled)))}catch(e){res.status(404).json({error:e instanceof Error?e.message:"erro"})}});
 app.get("/api/capacity",(req,res)=>{const city=typeof req.query.city==="string"?req.query.city:undefined;if(city)return res.json(capacityCities().find(x=>x.city===city)??{city,eligibleDrivers:0,committedReservations:0,availableCapacity:0});res.json(capacityCities())});
 app.get("/api/payments/:id/settlement",(req,res)=>{
  const p=payments.get(req.params.id);
