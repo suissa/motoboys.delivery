@@ -1,4 +1,4 @@
-import type {Company,Driver,Order,Payment,Shift,WorkPolicy,LocationSession} from "./domain.js";
+import type {Company,Driver,Order,Payment,Shift,WorkPolicy,LocationSession,CapacityReservation} from "./domain.js";
 import {clearCollection,deleteEntity,entityExists,history,readEntity,readEntities,resetDatabase as resetPersistentDatabase,setEntity,transaction,updateEntityProperty} from "./persistence/database.js";
 
 type Entity={id:string}&Record<string,unknown>;
@@ -58,6 +58,7 @@ export const orders=new PersistentMap<Order>("orders");
 export const payments=new PersistentMap<Payment>("payments");
 export const workPolicies=new PersistentMap<WorkPolicy>("work_policies");
 export const locationSessions=new PersistentMap<LocationSession>("location_sessions");
+export const capacityReservations=new PersistentMap<CapacityReservation>("capacity_reservations");
 
 const listeners=new Set<()=>void>();
 export function changed(){for(const listener of listeners)listener()}
@@ -75,6 +76,7 @@ const seeds={
   ],
   shifts:[],
   location_sessions:[],
+  capacity_reservations:[],
   work_policies:[
     {id:"moto-01",driverId:"moto-01",maxShiftSeconds:4*60*60,requiredRestSeconds:60*60,enabled:true},
     {id:"moto-02",driverId:"moto-02",maxShiftSeconds:4*60*60,requiredRestSeconds:60*60,enabled:true},
