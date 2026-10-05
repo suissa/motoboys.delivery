@@ -86,6 +86,7 @@ const seeds={
 function ensureSeeds(){
   if(companies.size===0)setEntity("companies","company-demo",seeds.companies[0]);
   if(drivers.size===0)for(const d of seeds.drivers)setEntity("drivers",d.id,d);
+  if(workPolicies.size===0)for(const policy of seeds.work_policies)setEntity("work_policies",policy.id,policy);
 }
 
 ensureSeeds();
