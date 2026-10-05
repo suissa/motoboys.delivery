@@ -15,8 +15,8 @@
     "simulate:whatsapp": "tsx scripts/simulate-whatsapp.ts",
     "simulate:api": "tsx scripts/simulate-api.ts",
     "simulate:pipeline": "tsx scripts/simulate-pipeline.ts",
-    "test:unit": "node --import tsx --test tests/unit",
-    "test:bdd": "node --import tsx --test tests/bdd",
+    "test:unit": "node --test-concurrency=1 --import tsx --test tests/unit",
+    "test:bdd": "node --test-concurrency=1 --import tsx --test tests/bdd",
     "test": "npm run test:unit && npm run test:bdd",
     "simulate:persistence": "tsx scripts/simulate-persistence.ts"
   },
@@ -36,6 +36,6 @@
     "typescript": "^5.9.3"
   },
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=24.0.0"
   }
 }
