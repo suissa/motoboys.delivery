@@ -59,6 +59,14 @@ database.exec(`
     FOREIGN KEY(event_id) REFERENCES domain_events(event_id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS channel_message_receipts(
+    channel TEXT NOT NULL,
+    message_id TEXT NOT NULL,
+    payload_hash TEXT NOT NULL,
+    received_at TEXT NOT NULL,
+    PRIMARY KEY(channel,message_id)
+  );
+
   CREATE TABLE IF NOT EXISTS financial_webhook_receipts(
     idempotency_key TEXT PRIMARY KEY,
     payload_hash TEXT NOT NULL,
@@ -205,6 +213,16 @@ export function clearCollection(collection:string){
   });
 }
 
+export function claimChannelMessage(input:{channel:string;messageId:string;payloadHash:string;receivedAt:string}){
+ const result=database.prepare("INSERT INTO channel_message_receipts(channel,message_id,payload_hash,received_at) VALUES(?,?,?,?) ON CONFLICT(channel,message_id) DO NOTHING")
+   .run(input.channel,input.messageId,input.payloadHash,input.receivedAt);
+ return Number(result.changes)===1;
+}
+
+export function channelMessageReceived(channel:string,messageId:string){
+ return !!database.prepare("SELECT 1 FROM channel_message_receipts WHERE channel=? AND message_id=?").get(channel,messageId);
+}
+
 export type SettlementLedgerEntry={
   entry_id:string;
   payment_id:string;
@@ -344,6 +362,7 @@ export function history(collection?:string){
 export function resetDatabase(seeds:Record<string,Record<string,unknown>[]>){
   transaction(()=>{
     database.exec("DELETE FROM entities");
+    database.exec("DELETE FROM channel_message_receipts");
     database.exec("DELETE FROM financial_webhook_receipts");
     database.exec("DELETE FROM settlement_ledger");
     database.exec("DELETE FROM domain_event_projections");
