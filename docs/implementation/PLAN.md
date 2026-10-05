@@ -30,7 +30,9 @@ O evento representa o que aconteceu; dashboard, WhatsApp e demais interfaces pas
 
 **Libera:** observabilidade, auditoria, reconstrução de estado e integração dos fluxos operacionais.
 
-### 3. #4 — Contabilização real de horas trabalhadas e justiça da fila
+### 3. #4 — Contabilização real de horas trabalhadas e justiça da fila ✅
+
+**Status:** implementada.
 
 Implementar o cálculo real de tempo trabalhado, pausas, descanso e disponibilidade.
 
