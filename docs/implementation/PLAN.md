@@ -48,7 +48,9 @@ Sobre a contabilização real de trabalho, implementar metas, limites de jornada
 
 **Depende de:** #4.
 
-### 5. #12 — Preço definido pelo prestador e cobrança separada da taxa da plataforma
+### 5. #12 — Preço definido pelo prestador e cobrança separada da taxa da plataforma ✅
+
+**Status:** implementada.
 
 Separar explicitamente preço do serviço, taxa da plataforma e total pago pelo cliente.
 
