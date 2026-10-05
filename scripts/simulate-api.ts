@@ -36,7 +36,11 @@ try{
  assert.equal(invalid.status,401);
  const assigned=await (await fetch(`http://127.0.0.1:${port}/api/state`)).json();
  const assignedOrder=assigned.orders.find((x:any)=>x.id===created.order.id);
- assert.equal(assignedOrder.status,"ASSIGNED");
+ assert.equal(assignedOrder.status,"OFFERED");
+ const driverId=assignedOrder.assignedDriverId;
+ const accepted=await fetch(`http://127.0.0.1:${port}/api/orders/${created.order.id}/dispatch/accept`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({driverId})});
+ assert.equal(accepted.status,200);
+ for(const status of ["PICKED_UP","IN_TRANSIT","ARRIVED"]){const r=await fetch(`http://127.0.0.1:${port}/api/orders/${created.order.id}/status`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({status,driverId})});assert.equal(r.status,200)}
  await fetch(`http://127.0.0.1:${port}/api/orders/${created.order.id}/confirm`,{method:"POST"});
  const awaiting=await (await fetch(`http://127.0.0.1:${port}/api/state`)).json();
  const confirmation=awaiting.orders.find((x:any)=>x.id===created.order.id).confirmationCode;
