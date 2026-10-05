@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+process.env.FINANCIAL_API="http://127.0.0.1:9";
+process.env.PIX_EXPIRATION_SECONDS="30";
+const {createPix,confirmPayment,expirePayment}=await import("../src/services/payments.js");
+const p=await createPix("simulation-order",12.5);
+assert.equal(p.status,"PENDING");
+assert(p.qrCodeDataUrl.startsWith("data:image/png;base64,"));
+assert.equal(confirmPayment(p.id)?.status,"PAID");
+assert.equal(expirePayment(p.id),false);
+const p2=await createPix("simulation-order-2",9);
+assert.equal(expirePayment(p2.id),true);
+assert.equal(p2.status,"EXPIRED");
+console.log(JSON.stringify({simulation:"payments",created:p.id,paid:p.status,expired:p2.status,expiresAt:p.expiresAt},null,2));
