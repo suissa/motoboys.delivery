@@ -7,6 +7,8 @@ export type LocationPurpose="WORK_START"|"DISPATCH"|"ACTIVE_SERVICE";
 export type LocationScope="NETWORK"|"SERVICE";
 export type CapacityStatus="UNKNOWN"|"PROMISED"|"INSUFFICIENT"|"RELEASED";
 export type ProviderType="COMPANY"|"INDEPENDENT";
+export type TwinActorType="CUSTOMER"|"DRIVER";
+export interface ConversationalTwin { id:string; serviceId:string; actorType:TwinActorType; actorId:string; channel:"WHATSAPP"; phone:string; contextVersion:number; state:"ACTIVE"|"CLOSED"; lastInboundAt?:string; lastOutboundAt?:string; lastMessageId?:string; lastCorrelationId?:string; }
 export interface Provider { id:string; name:string; type:ProviderType; city:string; phone?:string; enabled:boolean; createdAt:string; }
 export interface CapacityReservation { id:string; orderId:string; city:string; reservedAt:string; status:"ACTIVE"|"RELEASED"; releasedAt?:string; }
 export interface LocationSession { id:string; actorType:"DRIVER"|"CUSTOMER"; actorId:string; serviceId?:string; purpose:LocationPurpose; scope:LocationScope; startedAt:string; expiresAt:string; }
