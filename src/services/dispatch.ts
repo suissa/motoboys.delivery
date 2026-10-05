@@ -26,8 +26,10 @@ export function createDispatchOffer(orderId:string){
  transaction(()=>{
   const o=requireOrder(orderId);
   if(o.status!=="SEARCHING_DRIVER")return;
-  const candidate=rankCandidates(o.pickup)[0];
-  if(!candidate){result=o;return}
+  const candidates=rankCandidates(o.pickup);
+  for(const candidate of candidates)emitDomainEvent({type:"CandidateEvaluated",aggregateType:"order",aggregateId:o.id,payload:{serviceId:o.id,driverId:candidate.driver.id,deliveriesPerHour:candidate.deliveriesPerHour,distanceKm:candidate.distanceKm,etaMinutes:candidate.etaMinutes,eligible:true}});
+  const candidate=candidates[0];
+  if(!candidate){emitDomainEvent({type:"CandidateEvaluated",aggregateType:"order",aggregateId:o.id,payload:{serviceId:o.id,candidates:0,eligible:false},projections:[orderView(o)]});result=o;return}
   const now=new Date();
   const offerId=crypto.randomUUID();
   o.status="OFFERED";
