@@ -7,6 +7,7 @@ import {startShift,endShift,enforceRest,refreshRestStates} from "../../src/servi
 import {parseIncoming} from "../../src/services/whatsapp.js";
 import {createPix,confirmPayment,expirePayment} from "../../src/services/payments.js";
 import {createOrder,onPaymentConfirmed,completeOrder} from "../../src/services/orders.js";
+import {acceptDispatch,requestDeliveryConfirmation,transitionDelivery} from "../../src/services/dispatch.js";
 import {resetState} from "../helpers/reset.js";
 
 test.beforeEach(resetState);
@@ -52,14 +53,21 @@ test("pix lifecycle creates, confirms and expires",async()=>{
  const p2=await createPix("o2",10); assert.equal(expirePayment(p2.id),true); assert.equal(p2.status,"EXPIRED");
 });
 
-test("order lifecycle assigns and completes",async()=>{
+test("order lifecycle follows the full dispatch state machine",async()=>{
  process.env.FINANCIAL_API="http://127.0.0.1:9";
  for(const d of drivers.values()){d.status="AVAILABLE";d.location={lat:-24.112,lng:-49.334};d.activeSecondsToday=3600;d.sessionId="test-session"}
  const {order,payment}=await createOrder({companyId:"company-demo",customerPhone:"x",pickup:{lat:-24.112,lng:-49.334},destination:{lat:-24.115,lng:-49.330},price:12.5});
- confirmPayment(payment.id); const assigned=await onPaymentConfirmed(payment.id);
- assert.equal(assigned.status,"ASSIGNED"); assert(assigned.assignedDriverId);
- assigned.confirmationCode="123456";assigned.status="AWAITING_CONFIRMATION";
- assert.equal(completeOrder(assigned.id,"123456"),true);
+ confirmPayment(payment.id);
+ const offered=await onPaymentConfirmed(payment.id);
+ assert.equal(offered.status,"OFFERED"); assert(offered.assignedDriverId);
+ acceptDispatch(offered.id,offered.assignedDriverId!);
+ transitionDelivery(offered.id,"PICKED_UP",offered.assignedDriverId);
+ transitionDelivery(offered.id,"IN_TRANSIT",offered.assignedDriverId);
+ transitionDelivery(offered.id,"ARRIVED",offered.assignedDriverId);
+ const awaiting=requestDeliveryConfirmation(offered.id);
+ assert.equal(awaiting.status,"AWAITING_CONFIRMATION");
+ awaiting.confirmationCode="123456";
+ assert.equal(completeOrder(awaiting.id,"123456"),true);
  assert.equal(order.status,"COMPLETED");
 });
 
@@ -67,6 +75,13 @@ test("order completion rejects invalid confirmation code",async()=>{
  process.env.FINANCIAL_API="http://127.0.0.1:9";
  for(const d of drivers.values()){d.status="AVAILABLE";d.location={lat:-24.112,lng:-49.334};d.sessionId="test-session"}
  const {order,payment}=await createOrder({companyId:"company-demo",customerPhone:"x",pickup:{lat:-24.112,lng:-49.334},destination:{lat:-24.115,lng:-49.330},price:10});
- confirmPayment(payment.id); const assigned=await onPaymentConfirmed(payment.id); assigned.confirmationCode="123456";assigned.status="AWAITING_CONFIRMATION";
- assert.equal(completeOrder(order.id,"000000"),false); assert.equal(order.status,"AWAITING_CONFIRMATION");
+ confirmPayment(payment.id);
+ const offered=await onPaymentConfirmed(payment.id);
+ acceptDispatch(offered.id,offered.assignedDriverId!);
+ transitionDelivery(offered.id,"PICKED_UP",offered.assignedDriverId);
+ transitionDelivery(offered.id,"IN_TRANSIT",offered.assignedDriverId);
+ transitionDelivery(offered.id,"ARRIVED",offered.assignedDriverId);
+ const awaiting=requestDeliveryConfirmation(order.id);
+ assert.equal(completeOrder(order.id,"000000"),false);
+ assert.equal(awaiting.status,"AWAITING_CONFIRMATION");
 });
