@@ -18,7 +18,9 @@ Implementar persistência transacional para substituir o estado operacional em m
 
 **Libera:** #3, #4, #7, #8, #10, #12, #13 e as demais funcionalidades que precisam de estado confiável.
 
-### 2. #3 — Event log e projeções para a operação
+### 2. #3 — Event log e projeções para a operação ✅
+
+**Status:** implementada.
 
 Com a persistência como fonte de verdade, implementar o histórico de eventos e as projeções derivadas.
 
