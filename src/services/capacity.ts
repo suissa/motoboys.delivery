@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import type {CapacityReservation,Driver} from "../domain.js";
 import {capacityReservations,companies,drivers,orders,changed,transaction} from "../store.js";
-import {refreshLocationSessions} from "./location.js";
+import {refreshLocationSessions} from "./location.js";import {refreshRestStates} from "./shifts.js";import {rankCandidates} from "./queue.js";
 import {effectiveActiveSeconds} from "./work-time.js";
 import {isDispatchEligibleByPolicy} from "./work-policy.js";
 import {emitDomainEvent} from "../events.js";
@@ -50,12 +50,14 @@ export function reserveCapacityForOrder(orderId:string){
  transaction(()=>{
   const order=orders.get(orderId);
   if(!order)throw Error("Pedido não encontrado");
+  refreshRestStates();
   const company=companies.get(order.companyId);
   if(!company)throw Error("Empresa não encontrada");
   const existing=order.capacityReservationId?capacityReservations.get(order.capacityReservationId):undefined;
   if(existing?.status==="ACTIVE"){result={reserved:true,reservation:existing,capacity:capacityForCity(company.city)};return}
   const capacity=capacityForCity(company.city);
-  if(capacity.availableCapacity<=0){
+  const candidateAvailable=rankCandidates(order.pickup).length>0;
+  if(capacity.availableCapacity<=0||!candidateAvailable){
    order.capacityStatus="INSUFFICIENT";
    emitDomainEvent({type:"CapacityInsufficient",aggregateType:"order",aggregateId:order.id,payload:{serviceId:order.id,city:company.city,capacity},projections:[orderView(order)]});
    result={reserved:false,capacity};
