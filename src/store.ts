@@ -83,7 +83,6 @@ const seeds={
   shifts:[],
   location_sessions:[],
   capacity_reservations:[],
-  providers:[],
   twins:[],
   work_policies:[
     {id:"moto-01",driverId:"moto-01",maxShiftSeconds:4*60*60,requiredRestSeconds:60*60,enabled:true},
