@@ -73,7 +73,7 @@ O próximo passo de arquitetura é separar esse histórico de persistência do E
 
 ## Produção
 
-Persistência transacional, Event Log/projeções, contabilização de jornada, WorkPolicy e quote por prestador estão implementados. Ainda permanecem: idempotência financeira, autenticação/autorização, assinatura de webhooks, dispatch completo, capacidade de rede, observabilidade e um provedor oficial de WhatsApp.
+Persistência transacional, Event Log/projeções, contabilização de jornada, WorkPolicy, quote por prestador e liquidação financeira idempotente estão implementados. Ainda permanecem: autenticação/autorização, localização com política de retenção, dispatch completo, capacidade de rede, observabilidade e um provedor oficial de WhatsApp.
 
 
 ## Simulações executáveis
