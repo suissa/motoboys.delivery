@@ -22,6 +22,7 @@ PoC de uma rede de entregas com fila rotacional, justiça por entregas/hora, geo
 - Persistência operacional em SQLite com transações, WAL e histórico recuperável de estados.
 - Estado canônico persistido independente do processo HTTP ou canal de comunicação.
 - Domain Event Log transacional com projeções reconstruíveis para a operação.
+- Contabilização de tempo ativo por período de trabalho, descanso e virada de dia, sem polling contínuo.
 - Toda propriedade visual está em `src/configs/layout.yml`; o frontend recebe o YAML por `/api/config/layout` e transforma os valores em CSS custom properties em runtime.
 
 ## Execução
@@ -70,7 +71,7 @@ O próximo passo de arquitetura é separar esse histórico de persistência do E
 
 ## Produção
 
-Persistência transacional e Event Log/projeções estão implementados. Ainda permanecem: contabilização real de jornada, idempotência financeira, autenticação/autorização, assinatura de webhooks, dispatch completo, capacidade de rede, observabilidade e um provedor oficial de WhatsApp.
+Persistência transacional, Event Log/projeções e contabilização de jornada estão implementados. Ainda permanecem: política de qualidade de vida, idempotência financeira, autenticação/autorização, assinatura de webhooks, dispatch completo, capacidade de rede, observabilidade e um provedor oficial de WhatsApp.
 
 
 ## Simulações executáveis
@@ -81,6 +82,7 @@ Cada funcionalidade operacional possui uma simulação independente:
 npm run simulate:geo
 npm run simulate:queue
 npm run simulate:shifts
+npm run simulate:work-time
 npm run simulate:payments
 npm run simulate:orders
 npm run simulate:whatsapp
