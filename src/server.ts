@@ -19,6 +19,7 @@ import {normalizeWorkDay} from "./services/work-time.js";
 import {getWorkPolicy,setWorkPolicy} from "./services/work-policy.js";
 import {settlePayment,paymentWebhookSignature,verifyPaymentWebhookSignature} from "./services/finance.js";
 import crypto from "node:crypto";
+import {ledgerTotals,readLedger} from "./persistence/database.js";
 
 ensureDomainEventBaseline();
 rebuildOperationalProjections();
@@ -121,6 +122,14 @@ app.post("/api/whatsapp/webhook",async(req,res)=>{
 
 app.post("/api/orders",async(req,res)=>{try{res.status(201).json(await createOrder(req.body))}catch(e){res.status(400).json({error:e instanceof Error?e.message:"erro"})}});
 app.get("/api/orders/:id/payment",(req,res)=>{const o=orders.get(req.params.id),p=o?.paymentId?payments.get(o.paymentId):undefined;if(!p)return res.status(404).json({error:"cobrança não encontrada"});res.json(p)});
+app.get("/api/payments/:id/settlement",(req,res)=>{
+ const p=payments.get(req.params.id);
+ if(!p)return res.status(404).json({error:"cobrança não encontrada"});
+ const totals=ledgerTotals(p.id);
+ const expected=Math.round(p.price*100);
+ const reconciled=totals.providerCents+totals.platformFeeCents===expected;
+ res.json({paymentId:p.id,orderId:p.orderId,customerTotalCents:expected,providerCents:totals.providerCents,platformFeeCents:totals.platformFeeCents,reconciled,entries:readLedger(p.id)});
+});
 app.get("/pagamento/:id",(req,res)=>{const o=orders.get(req.params.id),p=o?.paymentId?payments.get(o.paymentId):undefined;if(!p)return res.status(404).send("Cobrança não encontrada");const expires=Date.parse(p.expiresAt);res.type("html").send(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pagamento · motoboys.delivery</title><style>body{margin:0;background:#090909;color:#f4f4f4;font:16px system-ui;display:grid;place-items:center;min-height:100vh}.box{width:min(440px,90vw);background:#111;border:1px solid #2a2a2a;border-radius:16px;padding:24px;text-align:center}img{width:260px;max-width:100%;background:#fff;padding:10px;border-radius:10px}code{display:block;background:#181818;padding:12px;border-radius:9px;word-break:break-all;text-align:left;color:#ffd400}b{font-size:28px;color:#ffd400}small{color:#999}</style><div class="box"><h1>Pagamento da entrega</h1><p>Valor</p><b>R$ ${p.price.toFixed(2).replace(".",",")}</b><p><img src="${p.qrCodeDataUrl}" alt="QR Code Pix"></p><p>Pix copia-e-cola</p><code>${p.pixCopyPaste}</code><p>Tempo restante: <b id="timer"></b></p><small>Após o vencimento, enviaremos uma mensagem perguntando se você ainda deseja o serviço.</small></div><script>const e=${expires};setInterval(()=>{const s=Math.max(0,Math.ceil((e-Date.now())/1000));document.querySelector("#timer").textContent=Math.floor(s/60)+":"+String(s%60).padStart(2,"0")},250)</script></html>`)});
 app.post("/api/payments/webhook",async(req,res)=>{const id=req.body.paymentId??req.body.id;if(!id)return res.status(400).json({error:"paymentId é obrigatório"});confirmPayment(id);res.json({ok:true,order:await onPaymentConfirmed(id)})});
 
