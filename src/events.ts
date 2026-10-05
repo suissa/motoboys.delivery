@@ -29,7 +29,9 @@ export type DomainEventType=
   |"ShiftStarted"
   |"RestStarted"
   |"RestEnded"
-  |"ShiftEnded";
+  |"ShiftEnded"
+  |"WorkTimeAccumulated"
+  |"WorkDayRolledOver";
 
 export type DomainEventAggregate="service"|"order"|"payment"|"driver"|"shift";
 
