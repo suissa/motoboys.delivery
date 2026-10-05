@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import type {ConversationalTwin,TwinActorType} from "../domain.js";
 import {twins,orders,drivers,changed,transaction} from "../store.js";
 import {emitDomainEvent} from "../events.js";
@@ -101,8 +100,7 @@ export function twinContext(serviceId:string){
   providerId:order.assignedProviderId,
   driverId:driver?.id,
   driverName:driver?.name,
-  customerActorId:order.customerPhone,
-  customerPhoneAvailableToPlatform:true,
+  customerPresent:true,
   shared:{pickup:order.pickup,destination:order.destination,assignedProviderId:order.assignedProviderId}
  };
 }
