@@ -93,7 +93,7 @@ app.post("/api/whatsapp/webhook",async(req,res)=>{
  if(!i.from)return res.status(400).json({error:"from é obrigatório"});
  const d=[...drivers.values()].find(x=>x.phone===i.from);
  if(d){
-  if(i.location)shareDriverLocation(d.id,i.location,{purpose:d.status==="AVAILABLE"?"WORK_START":"ACTIVE_SERVICE",scope:"SERVICE",serviceId:req.body.serviceId});
+  if(i.location){const activeOrder=[...orders.values()].find(x=>x.assignedDriverId===d.id&&!["COMPLETED","CANCELLED"].includes(x.status));shareDriverLocation(d.id,i.location,{purpose:activeOrder?"ACTIVE_SERVICE":"WORK_START",scope:activeOrder?"SERVICE":"NETWORK",serviceId:activeOrder?.id});}
   const t=i.text?.trim().toLowerCase();
   if(t==="iniciar turno")startShift(d.id);
   if(t==="encerrar turno")endShift(d.id);
