@@ -25,6 +25,7 @@ PoC de uma rede de entregas com fila rotacional, justiça por entregas/hora, geo
 - Contabilização de tempo ativo por período de trabalho, descanso e virada de dia, sem polling contínuo.
 - WorkPolicy configurável por motorista, com limite de jornada, descanso obrigatório e meta não punitiva.
 - Quote auditável separando preço definido pelo prestador, taxa da plataforma e total cobrado do cliente.
+- LocationSession temporária com escopo, finalidade e expiração; sessões expiradas não permanecem como localização operacional.
 - Toda propriedade visual está em `src/configs/layout.yml`; o frontend recebe o YAML por `/api/config/layout` e transforma os valores em CSS custom properties em runtime.
 
 ## Execução
@@ -73,7 +74,7 @@ O próximo passo de arquitetura é separar esse histórico de persistência do E
 
 ## Produção
 
-Persistência transacional, Event Log/projeções, contabilização de jornada, WorkPolicy, quote por prestador e liquidação financeira idempotente estão implementados. Ainda permanecem: autenticação/autorização, localização com política de retenção, dispatch completo, capacidade de rede, observabilidade e um provedor oficial de WhatsApp.
+Persistência transacional, Event Log/projeções, contabilização de jornada, WorkPolicy, quote por prestador, liquidação financeira idempotente e localização temporária estão implementados. Ainda permanecem: autenticação/autorização, dispatch completo, capacidade de rede, observabilidade e um provedor oficial de WhatsApp.
 
 
 ## Simulações executáveis
@@ -87,6 +88,7 @@ npm run simulate:shifts
 npm run simulate:work-time
 npm run simulate:work-policy
 npm run simulate:quotes
+npm run simulate:location
 npm run simulate:payments
 npm run simulate:orders
 npm run simulate:whatsapp
