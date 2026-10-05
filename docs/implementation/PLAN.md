@@ -66,7 +66,9 @@ Implementar a integração financeira real com assinatura/verificação, idempot
 
 **Depende de:** #2, #3 e #12.
 
-### 7. #10 — Localização mínima e compartilhada entre as partes
+### 7. #10 — Localização mínima e compartilhada entre as partes ✅
+
+**Status:** implementada.
 
 Implementar localização com escopo, finalidade e validade definidos.
 
