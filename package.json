@@ -21,7 +21,8 @@
     "simulate:persistence": "tsx scripts/simulate-persistence.ts",
     "simulate:events": "tsx scripts/simulate-events.ts",
     "simulate:work-time": "tsx scripts/simulate-work-time.ts",
-    "simulate:work-policy": "tsx scripts/simulate-work-policy.ts"
+    "simulate:work-policy": "tsx scripts/simulate-work-policy.ts",
+    "simulate:quotes": "tsx scripts/simulate-quotes.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
