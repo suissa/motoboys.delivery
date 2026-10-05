@@ -21,6 +21,7 @@ PoC de uma rede de entregas com fila rotacional, justiça por entregas/hora, geo
 - Tema escuro/amarelo.
 - Persistência operacional em SQLite com transações, WAL e histórico recuperável de estados.
 - Estado canônico persistido independente do processo HTTP ou canal de comunicação.
+- Domain Event Log transacional com projeções reconstruíveis para a operação.
 - Toda propriedade visual está em `src/configs/layout.yml`; o frontend recebe o YAML por `/api/config/layout` e transforma os valores em CSS custom properties em runtime.
 
 ## Execução
@@ -69,7 +70,7 @@ O próximo passo de arquitetura é separar esse histórico de persistência do E
 
 ## Produção
 
-Persistência transacional está implementada. Ainda permanecem: idempotência financeira, autenticação/autorização, assinatura de webhooks, fila de eventos de domínio, observabilidade e um provedor oficial de WhatsApp.
+Persistência transacional e Event Log/projeções estão implementados. Ainda permanecem: contabilização real de jornada, idempotência financeira, autenticação/autorização, assinatura de webhooks, dispatch completo, capacidade de rede, observabilidade e um provedor oficial de WhatsApp.
 
 
 ## Simulações executáveis
@@ -83,6 +84,7 @@ npm run simulate:shifts
 npm run simulate:payments
 npm run simulate:orders
 npm run simulate:whatsapp
+npm run simulate:events
 npm run simulate:persistence
 npm run simulate:api
 ```
@@ -109,7 +111,7 @@ npm run test:bdd
 npm test
 ```
 
-Os testes cobrem geometria/ETA, fila de justiça, elegibilidade por distância/status/descanso, turnos, descanso, parser WhatsApp, ciclo Pix, ciclo de pedido, dispatch, confirmação da entrega e persistência transacional, rollback, reinício e concorrência entre processos.
+Os testes cobrem geometria/ETA, fila de justiça, elegibilidade por distância/status/descanso, turnos, descanso, parser WhatsApp, ciclo Pix, ciclo de pedido, dispatch, confirmação da entrega, persistência transacional, rollback, reinício, concorrência entre processos e reconstrução de projeções a partir do Event Log.
 
 ## Implementação em andamento
 
