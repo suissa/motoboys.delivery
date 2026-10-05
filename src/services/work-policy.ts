@@ -1,6 +1,6 @@
 import type {WorkPolicy} from "../domain.js";
 import {changed,transaction,workPolicies} from "../store.js";
-import {emitDomainEvent} from "../events.js";
+import {emitDomainEvent} from "../events.js";import {workPolicyView} from "../projections/operations.js";
 
 const DEFAULT_MAX_SHIFT=4*60*60;
 const DEFAULT_REST=60*60;
@@ -13,8 +13,7 @@ export function getWorkPolicy(driverId:string){
  const existing=workPolicies.get(driverId);
  if(existing)return existing;
  const policy=defaults(driverId);
- transaction(()=>workPolicies.set(driverId,policy));
- changed();
+ transaction(()=>{workPolicies.set(driverId,policy);emitDomainEvent({type:"WorkPolicyChanged",aggregateType:"driver",aggregateId:driverId,payload:{driverId,maxShiftSeconds:policy.maxShiftSeconds,requiredRestSeconds:policy.requiredRestSeconds,dailyGoalDeliveries:policy.dailyGoalDeliveries,enabled:policy.enabled},projections:[workPolicyView(policy)]})});
  return workPolicies.get(driverId)!;
 }
 
@@ -32,7 +31,7 @@ export function setWorkPolicy(driverId:string,input:Partial<Omit<WorkPolicy,"dri
   emitDomainEvent({type:"WorkPolicyChanged",aggregateType:"driver",aggregateId:driverId,payload:{
    driverId,maxShiftSeconds:next.maxShiftSeconds,requiredRestSeconds:next.requiredRestSeconds,
    dailyGoalDeliveries:next.dailyGoalDeliveries,enabled:next.enabled
-  },projections:[]});
+  },projections:[workPolicyView(next)]});
  });
  changed();
  return workPolicies.get(driverId)!;
