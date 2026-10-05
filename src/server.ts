@@ -13,17 +13,13 @@ import {confirmPayment} from "./services/payments.js";
 import {distanceKm} from "./services/geo.js";
 import {deliveriesPerHour} from "./services/queue.js";
 import type {LatLng} from "./domain.js";
-
-const app=express(); app.use(cors()); app.use(express.json({limit:"5mb"}));
-const __dirname=path.dirname(fileURLToPath(import.meta.url)); app.use(express.static(path.resolve(__dirname,"../public")));
-
+const app=express();app.use(cors());app.use(express.json({limit:"5mb"}));
+const __dirname=path.dirname(fileURLToPath(import.meta.url));app.use(express.static(path.resolve(__dirname,"../public")));
 function completed(){return[...orders.values()].filter(o=>o.status==="COMPLETED")}
 function metrics(){const now=Date.now(),rows=completed(),w={hour:36e5,day:864e5,week:6048e5,month:2592e6};const agg=(ms:number,subset=rows)=>{const r=subset.filter(o=>now-Date.parse(o.completedAt??o.createdAt)<=ms);return{deliveries:r.length,money:r.reduce((s,o)=>s+o.price,0),platformFees:r.reduce((s,o)=>s+o.platformFee,0)}};return{city:{hour:agg(w.hour),day:agg(w.day),week:agg(w.week),month:agg(w.month)},company:Object.fromEntries([...companies].map(([id])=>[id,{hour:agg(w.hour),day:agg(w.day),week:agg(w.week),month:agg(w.month)}])),drivers:Object.fromEntries([...drivers].map(([id])=>{const subset=rows.filter(o=>o.assignedDriverId===id);return[id,{hour:agg(w.hour,subset),day:agg(w.day,subset),week:agg(w.week,subset),month:agg(w.month,subset)}]}))}}
-async function layoutConfig(){return YAML.parse(await fs.readFile(path.resolve(__dirname,"configs/layout.yml"),"utf8"))}
+async function layoutConfig(){return YAML.parse(await fs.readFile(path.resolve(__dirname,"../src/configs/layout.yml"),"utf8"))}
 function snapshot(){refreshRestStates();const os=[...orders.values()],ds=[...drivers.values()];return{now:new Date().toISOString(),companies:[...companies.values()],drivers:ds.map(d=>({...d,deliveriesPerHour:Number(deliveriesPerHour(d).toFixed(2))})),shifts:[...shifts.values()],orders:os,payments:[...payments.values()].map(({qrCodeDataUrl,pixCopyPaste,...p})=>p),metrics:metrics(),totals:{deliveredToday:os.filter(o=>o.status==="COMPLETED").length,receivedToday:os.filter(o=>o.status==="COMPLETED").reduce((s,o)=>s+o.price,0),platformFeesToday:os.filter(o=>o.status==="COMPLETED").reduce((s,o)=>s+o.platformFee,0)}}}
-
-app.get("/api/config/layout",async(_q,r)=>r.json(await layoutConfig()));
-app.get("/api/state",(_q,r)=>r.json(snapshot()));
+app.get("/api/config/layout",async(_q,r)=>r.json(await layoutConfig()));app.get("/api/state",(_q,r)=>r.json(snapshot()));
 app.get("/api/events",(q,r)=>{r.setHeader("content-type","text/event-stream");r.setHeader("cache-control","no-cache");r.setHeader("connection","keep-alive");r.write(`data: ${JSON.stringify(snapshot())}\n\n`);const off=subscribe(()=>r.write(`data: ${JSON.stringify(snapshot())}\n\n`));q.on("close",off)});
 app.post("/api/whatsapp/webhook",async(req,res)=>{const i=parseIncoming(req.body);if(!i.from)return res.status(400).json({error:"from é obrigatório"});const d=[...drivers.values()].find(x=>x.phone===i.from);if(d){if(i.location){d.location=i.location;d.locationAt=new Date().toISOString();changed()}const t=i.text?.trim().toLowerCase();if(t==="iniciar turno")startShift(d.id);if(t==="encerrar turno")endShift(d.id);if(t==="descansar")enforceRest(d.id);const code=i.text?.match(/\b\d{6}\b/)?.[0],o=[...orders.values()].find(x=>x.assignedDriverId===d.id&&x.status==="AWAITING_CONFIRMATION");if(code&&o&&completeOrder(o.id,code))await whatsapp.send({to:d.phone,text:"Entrega confirmada e concluída."});if(i.mediaUrl){const p=[...orders.values()].find(x=>x.assignedDriverId===d.id&&["ASSIGNED","PICKED_UP","IN_TRANSIT"].includes(x.status));if(p){p.photoUrl=i.mediaUrl;p.status="PICKED_UP";changed()}}return res.json({ok:true,actor:"driver"})}const c=[...companies.values()].find(x=>x.phone===i.from);if(c){if(i.mediaUrl){const o=[...orders.values()].reverse().find(x=>x.companyId===c.id&&!x.photoUrl&&x.status!=="COMPLETED");if(o){o.photoUrl=i.mediaUrl;changed()}}return res.json({ok:true,actor:"company"})}const o=[...orders.values()].find(x=>x.customerPhone===i.from&&["ASSIGNED","PICKED_UP","IN_TRANSIT"].includes(x.status));if(o&&i.location){o.destination=i.location;changed()}res.json({ok:true,actor:"customer"})});
 app.post("/api/orders",async(req,res)=>{try{res.status(201).json(await createOrder(req.body))}catch(e){res.status(400).json({error:e instanceof Error?e.message:"erro"})}});
@@ -31,8 +27,7 @@ app.get("/api/orders/:id/payment",(req,res)=>{const o=orders.get(req.params.id),
 app.post("/api/payments/webhook",async(req,res)=>{const id=req.body.paymentId??req.body.id;if(!id)return res.status(400).json({error:"paymentId é obrigatório"});confirmPayment(id);res.json({ok:true,order:await onPaymentConfirmed(id)})});
 app.post("/api/drivers/:id/location",(req,res)=>{const d=drivers.get(req.params.id);if(!d)return res.status(404).json({error:"motoboy não encontrado"});d.location={lat:Number(req.body.lat),lng:Number(req.body.lng)};d.locationAt=new Date().toISOString();changed();res.json(d)});
 app.post("/api/drivers/:id/shift/start",(req,res)=>{try{res.json(startShift(req.params.id,Number(req.body.seconds)||undefined))}catch(e){res.status(400).json({error:e instanceof Error?e.message:"erro"})}});
-app.post("/api/drivers/:id/shift/end",(req,res)=>{endShift(req.params.id);res.json({ok:true})});
-app.post("/api/drivers/:id/rest",(req,res)=>res.json({until:enforceRest(req.params.id)}));
+app.post("/api/drivers/:id/shift/end",(req,res)=>{endShift(req.params.id);res.json({ok:true})});app.post("/api/drivers/:id/rest",(req,res)=>res.json({until:enforceRest(req.params.id)}));
 app.post("/api/orders/:id/confirm",async(req,res)=>{const o=orders.get(req.params.id);if(!o)return res.status(404).json({error:"pedido não encontrado"});const code=String(Math.floor(1e5+Math.random()*9e5));o.confirmationCode=code;o.status="AWAITING_CONFIRMATION";await whatsapp.send({to:o.customerPhone,text:`Código de confirmação da entrega: ${code}`});changed();res.json({ok:true})});
 app.get("/api/distance",(req,res)=>{const a:LatLng={lat:Number(req.query.lat1),lng:Number(req.query.lng1)},b:LatLng={lat:Number(req.query.lat2),lng:Number(req.query.lng2)};res.json({km:distanceKm(a,b)})});
 app.get("/{*splat}",(_q,res)=>res.sendFile(path.resolve(__dirname,"../public/index.html")));
