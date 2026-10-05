@@ -23,7 +23,11 @@ test("Scenario: Given the HTTP operation is running, When a customer pays and co
   const repeatedBody=await repeated.json();
   assert.equal(repeatedBody.alreadyProcessed,true);
   let state=await (await fetch(`http://127.0.0.1:${port}/api/state`)).json();
-  assert.equal(state.orders.find((x:any)=>x.id===created.order.id).status,"ASSIGNED");
+  const offered=state.orders.find((x:any)=>x.id===created.order.id);assert.equal(offered.status,"OFFERED");
+  const driverId=offered.assignedDriverId;
+  const accepted=await fetch(`http://127.0.0.1:${port}/api/orders/${created.order.id}/dispatch/accept`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({driverId})});
+  assert.equal(accepted.status,200);
+  for(const status of ["PICKED_UP","IN_TRANSIT","ARRIVED"]){const step=await fetch(`http://127.0.0.1:${port}/api/orders/${created.order.id}/status`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({status,driverId})});assert.equal(step.status,200)}
   await fetch(`http://127.0.0.1:${port}/api/orders/${created.order.id}/confirm`,{method:"POST"});
   state=await (await fetch(`http://127.0.0.1:${port}/api/state`)).json();
   const code=state.orders.find((x:any)=>x.id===created.order.id).confirmationCode;
