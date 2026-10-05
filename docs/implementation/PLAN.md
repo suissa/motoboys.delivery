@@ -40,7 +40,9 @@ A fila deve utilizar dados reais de trabalho, evitando que a distribuição depe
 
 **Depende de:** #2 e #3.
 
-### 4. #13 — Distribuição de trabalho, metas e descanso orientados à qualidade de vida
+### 4. #13 — Distribuição de trabalho, metas e descanso orientados à qualidade de vida ✅
+
+**Status:** implementada.
 
 Sobre a contabilização real de trabalho, implementar metas, limites de jornada, descanso obrigatório e regras de qualidade de vida.
 
