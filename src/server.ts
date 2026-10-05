@@ -15,6 +15,7 @@ import {deliveriesPerHour} from "./services/queue.js";
 import {ensureDomainEventBaseline,rebuildOperationalProjections,emitDomainEvent,operationalProjection} from "./events.js";
 import {driverView,orderView} from "./projections/operations.js";
 import type {LatLng,Order} from "./domain.js";
+import {normalizeWorkDay} from "./services/work-time.js";
 
 ensureDomainEventBaseline();
 rebuildOperationalProjections();
@@ -26,6 +27,7 @@ const __dirname=path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.resolve(__dirname,"../public")));
 
 function projected<T=any>(collection:string){return operationalProjection(collection) as T[]}
+function normalizeDailyWork(){transaction(()=>{for(const d of drivers.values()){const rollover=normalizeWorkDay(d,new Date());if(rollover)emitDomainEvent({type:"WorkDayRolledOver",aggregateType:"driver",aggregateId:d.id,payload:{driverId:d.id,previousWorkDate:rollover.workDate,previousCompletedToday:rollover.completedToday,previousActiveSecondsToday:rollover.closedActiveSeconds,previousEarnedToday:rollover.earnedToday},projections:[driverView(d)]})}})}
 function completed(){return projected<Order>("orders").filter(o=>o.status==="COMPLETED")}
 
 function metrics(){
@@ -50,6 +52,7 @@ async function layoutConfig(){return YAML.parse(await fs.readFile(path.resolve(_
 
 function snapshot(){
  refreshRestStates();
+ normalizeDailyWork();
  const ds=projected<any>("drivers"),os=projected<any>("orders"),ps=projected<any>("payments");
  return{
   now:new Date().toISOString(),
