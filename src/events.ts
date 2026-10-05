@@ -31,7 +31,8 @@ export type DomainEventType=
   |"RestEnded"
   |"ShiftEnded"
   |"WorkTimeAccumulated"
-  |"WorkDayRolledOver";
+  |"WorkDayRolledOver"
+  |"WorkPolicyChanged";
 
 export type DomainEventAggregate="service"|"order"|"payment"|"driver"|"shift";
 
