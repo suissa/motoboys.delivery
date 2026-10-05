@@ -20,7 +20,8 @@
     "test": "npm run test:unit && npm run test:bdd",
     "simulate:persistence": "tsx scripts/simulate-persistence.ts",
     "simulate:events": "tsx scripts/simulate-events.ts",
-    "simulate:work-time": "tsx scripts/simulate-work-time.ts"
+    "simulate:work-time": "tsx scripts/simulate-work-time.ts",
+    "simulate:work-policy": "tsx scripts/simulate-work-policy.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
