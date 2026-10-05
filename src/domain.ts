@@ -7,5 +7,5 @@ export interface Quote { providerPrice:number; platformFee:number; customerTotal
 export interface Order { id:string; companyId:string; customerPhone:string; pickup:LatLng; destination:LatLng; price:number; providerPrice:number; platformFee:number; customerTotal:number; quote:Quote; status:OrderStatus; paymentId?:string; assignedDriverId?:string; confirmationCode?:string; createdAt:string; paidAt?:string; assignedAt?:string; completedAt?:string; photoUrl?:string; paymentExpiresAt?:string; }
 export interface Company { id:string; name:string; city:string; phone:string; }
 export interface WorkPolicy { driverId:string; maxShiftSeconds:number; requiredRestSeconds:number; dailyGoalDeliveries?:number; enabled:boolean; }
-export interface Payment { id:string; orderId:string; price:number; pixCopyPaste:string; qrCodeDataUrl:string; expiresAt:string; status:"PENDING"|"PAID"|"EXPIRED"; }
+export interface Payment { id:string; orderId:string; price:number; providerPrice:number; platformFee:number; providerId:string; platformFeeSourceId:string; pixCopyPaste:string; qrCodeDataUrl:string; expiresAt:string; status:"PENDING"|"PAID"|"EXPIRED"; }
 export type OutboundMessage = { to:string; text?:string; location?:LatLng & {title?:string; etaMinutes?:number}; };
