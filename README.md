@@ -62,3 +62,46 @@ Webhook WhatsApp:
 ## Produção
 
 Esta é uma PoC e usa memória. Para produção: persistência transacional, idempotência, autenticação/autorização, assinatura de webhooks, fila de eventos, observabilidade e um provedor oficial de WhatsApp.
+
+
+## Simulações executáveis
+
+Cada funcionalidade operacional possui uma simulação independente:
+
+```bash
+npm run simulate:geo
+npm run simulate:queue
+npm run simulate:shifts
+npm run simulate:payments
+npm run simulate:orders
+npm run simulate:whatsapp
+npm run simulate:api
+```
+
+Para executar todas em sequência:
+
+```bash
+npm run simulate:pipeline
+```
+
+A simulação HTTP sobe uma instância temporária do servidor na porta `60160` por padrão. Para outra porta:
+
+```bash
+SIMULATION_PORT=60170 npm run simulate:api
+```
+
+## Testes
+
+Os testes foram separados em unitários e BDD:
+
+```bash
+npm run test:unit
+npm run test:bdd
+npm test
+```
+
+Os testes cobrem geometria/ETA, fila de justiça, elegibilidade por distância/status/descanso, turnos, descanso, parser WhatsApp, ciclo Pix, ciclo de pedido, dispatch e confirmação da entrega.
+
+## Lacunas planejadas
+
+As funcionalidades ainda não implementadas estão registradas como Issues no GitHub, com justificativa, escopo e critérios de aceitação. A PoC deliberadamente não considera essas lacunas como funcionalidades concluídas.
