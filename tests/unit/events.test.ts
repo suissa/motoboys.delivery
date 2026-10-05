@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {drivers,orders,resetStore,transaction} from "../../src/store.js";
+import {drivers,resetStore} from "../../src/store.js";
 import {readDomainEvents,readProjection} from "../../src/persistence/database.js";
 import {createOrder,onPaymentConfirmed,completeOrder} from "../../src/services/orders.js";
 import {confirmPayment} from "../../src/services/payments.js";
@@ -8,7 +8,7 @@ import {confirmPayment} from "../../src/services/payments.js";
 test.beforeEach(()=>{resetStore();process.env.FINANCIAL_API="http://127.0.0.1:9"});
 
 test("operational mutations emit domain events and update the projection",async()=>{
- for(const d of drivers.values()){d.status="AVAILABLE";d.location={lat:-24.112,lng:-49.334};d.activeSecondsToday=3600}
+ for(const d of drivers.values()){d.status="AVAILABLE";d.location={lat:-24.112,lng:-49.334};d.activeSecondsToday=3600;d.sessionId="test-session"}
  const {order,payment}=await createOrder({companyId:"company-demo",customerPhone:"events",pickup:{lat:-24.112,lng:-49.334},destination:{lat:-24.115,lng:-49.330},price:10});
  confirmPayment(payment.id);
  const assigned=await onPaymentConfirmed(payment.id);
@@ -22,7 +22,7 @@ test("operational mutations emit domain events and update the projection",async(
 });
 
 test("operational projections can be rebuilt entirely from the event log",async()=>{
- for(const d of drivers.values()){d.status="AVAILABLE";d.location={lat:-24.112,lng:-49.334};d.activeSecondsToday=3600}
+ for(const d of drivers.values()){d.status="AVAILABLE";d.location={lat:-24.112,lng:-49.334};d.activeSecondsToday=3600;d.sessionId="test-session"}
  const {order,payment}=await createOrder({companyId:"company-demo",customerPhone:"rebuild",pickup:{lat:-24.112,lng:-49.334},destination:{lat:-24.115,lng:-49.330},price:11});
  confirmPayment(payment.id);
  await onPaymentConfirmed(payment.id);
