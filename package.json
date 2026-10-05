@@ -17,7 +17,8 @@
     "simulate:pipeline": "tsx scripts/simulate-pipeline.ts",
     "test:unit": "node --import tsx --test tests/unit",
     "test:bdd": "node --import tsx --test tests/bdd",
-    "test": "npm run test:unit && npm run test:bdd"
+    "test": "npm run test:unit && npm run test:bdd",
+    "simulate:persistence": "tsx scripts/simulate-persistence.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -33,5 +34,8 @@
     "@types/qrcode": "^1.5.6",
     "tsx": "^4.20.5",
     "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=22.5.0"
   }
 }
