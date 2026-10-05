@@ -1,0 +1,10 @@
+import assert from "node:assert/strict";
+const {createOrder}=await import("../src/services/orders.js");
+const {runWithObservabilityContext,serviceAuditTimeline}=await import("../src/observability.js");
+const result=await runWithObservabilityContext({correlationId:"simulation-correlation"},()=>createOrder({companyId:"company-demo",customerPhone:"5515999992000",pickup:{lat:-24.112,lng:-49.334},destination:{lat:-24.115,lng:-49.330},price:10}));
+const timeline=serviceAuditTimeline(result.order.id);
+assert(timeline.length>0);
+assert(timeline.every((event:any)=>event.correlationId==="simulation-correlation"));
+assert.equal(JSON.stringify(timeline).includes("5515999992000"),false);
+assert.equal(JSON.stringify(timeline).includes("-24.112"),false);
+console.log(JSON.stringify({simulation:"observability",serviceId:result.order.id,eventCount:timeline.length,correlationId:"simulation-correlation",piiRedacted:true},null,2));
