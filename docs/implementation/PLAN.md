@@ -120,7 +120,9 @@ Criar os contextos conversacionais independentes do cliente e do motorista, vinc
 
 **Depende de:** #7 e #9.
 
-### 13. #14 — Observabilidade operacional e auditoria por serviço
+### 13. #14 — Observabilidade operacional e auditoria por serviço ✅
+
+**Status:** implementada.
 
 Consolidar observabilidade por `serviceId`/`correlationId`, timeline operacional, métricas e auditoria.
 
