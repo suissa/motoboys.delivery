@@ -16,6 +16,7 @@ import {ensureDomainEventBaseline,rebuildOperationalProjections,emitDomainEvent,
 import {driverView,orderView} from "./projections/operations.js";
 import type {LatLng,Order} from "./domain.js";
 import {normalizeWorkDay} from "./services/work-time.js";
+import {getWorkPolicy,setWorkPolicy} from "./services/work-policy.js";
 
 ensureDomainEventBaseline();
 rebuildOperationalProjections();
@@ -61,6 +62,7 @@ function snapshot(){
   shifts:projected("shifts"),
   orders:os,
   payments:ps,
+  workPolicies:projected("work_policies"),
   metrics:metrics(),
   totals:{
    deliveredToday:os.filter(o=>o.status==="COMPLETED").length,
@@ -124,6 +126,8 @@ app.post("/api/drivers/:id/location",(req,res)=>{const d=drivers.get(req.params.
 app.post("/api/drivers/:id/shift/start",(req,res)=>{try{res.json(startShift(req.params.id,Number(req.body.seconds)||undefined))}catch(e){res.status(400).json({error:e instanceof Error?e.message:"erro"})}});
 app.post("/api/drivers/:id/shift/end",(req,res)=>{endShift(req.params.id);res.json({ok:true})});
 app.post("/api/drivers/:id/rest",(req,res)=>res.json({until:enforceRest(req.params.id)}));
+app.get("/api/drivers/:id/work-policy",(req,res)=>{if(!drivers.get(req.params.id))return res.status(404).json({error:"motoboy não encontrado"});res.json(getWorkPolicy(req.params.id))});
+app.put("/api/drivers/:id/work-policy",(req,res)=>{try{if(!drivers.get(req.params.id))return res.status(404).json({error:"motoboy não encontrado"});res.json(setWorkPolicy(req.params.id,req.body))}catch(e){res.status(400).json({error:e instanceof Error?e.message:"erro"})}});
 app.post("/api/orders/:id/confirm",async(req,res)=>{
  const o=orders.get(req.params.id);if(!o)return res.status(404).json({error:"pedido não encontrado"});
  transaction(()=>{const current=orders.get(req.params.id);if(!current)throw Error("pedido não encontrado");const code=String(Math.floor(1e5+Math.random()*9e5));current.confirmationCode=code;current.status="AWAITING_CONFIRMATION";emitDomainEvent({type:"ConfirmationRequested",aggregateType:"order",aggregateId:current.id,payload:{serviceId:current.id},projections:[orderView(current)]})});
