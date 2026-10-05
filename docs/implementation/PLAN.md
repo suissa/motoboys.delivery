@@ -58,7 +58,9 @@ O preço do prestador continua sendo definido pelo próprio prestador; a platafo
 
 **Depende de:** #2 e #3.
 
-### 6. #8 — Webhook financeiro seguro, idempotente e com ledger de liquidação
+### 6. #8 — Webhook financeiro seguro, idempotente e com ledger de liquidação ✅
+
+**Status:** implementada.
 
 Implementar a integração financeira real com assinatura/verificação, idempotência, reconciliação e ledger de liquidação.
 
