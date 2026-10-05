@@ -28,7 +28,8 @@ export function createDispatchOffer(orderId:string){
   if(o.status!=="SEARCHING_DRIVER")return;
   const candidates=rankCandidates(o.pickup);
   for(const candidate of candidates)emitDomainEvent({type:"CandidateEvaluated",aggregateType:"order",aggregateId:o.id,payload:{serviceId:o.id,driverId:candidate.driver.id,deliveriesPerHour:candidate.deliveriesPerHour,distanceKm:candidate.distanceKm,etaMinutes:candidate.etaMinutes,eligible:true}});
-  const candidate=candidates[0];
+  const excluded=new Set(o.dispatchExcludedDriverIds??[]);
+  const candidate=candidates.find(x=>!excluded.has(x.driver.id))??(candidates.length&&!excluded.size?candidates[0]:undefined);
   if(!candidate){emitDomainEvent({type:"CandidateEvaluated",aggregateType:"order",aggregateId:o.id,payload:{serviceId:o.id,candidates:0,eligible:false},projections:[orderView(o)]});result=o;return}
   const now=new Date();
   const offerId=crypto.randomUUID();
@@ -83,6 +84,7 @@ export function acceptDispatch(orderId:string,driverId:string){
 
 function releaseOffer(o:Order,reason:"rejected"|"timeout"){
  const driverId=o.assignedDriverId;
+ if(driverId&&reason==="rejected"){o.dispatchExcludedDriverIds=[...(o.dispatchExcludedDriverIds??[]),driverId]}
  if(driverId){
   const d=drivers.get(driverId);
   if(d){d.status="AVAILABLE";delete d.lastAssignedAt}
