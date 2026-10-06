@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {spawn} from "node:child_process";
+import fs from "node:fs";
 
 test("canonical QA entrypoints exist in the package contract",()=>{
  const pkg=require("../../package.json");
