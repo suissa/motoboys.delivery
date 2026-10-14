@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {drivers,orders,resetStore} from "../../src/store.js";
 import {createOrder} from "../../src/services/orders.js";
 import {reserveCapacityForOrder,capacityForCity} from "../../src/services/capacity.js";
+import {startShift} from "../../src/services/shifts.js";
 
 test.beforeEach(resetStore);
 
@@ -16,7 +17,7 @@ test("network capacity is insufficient when no eligible driver exists",async()=>
 
 test("capacity reports available and committed units",()=>{
   const d=drivers.get("moto-01")!;
-  d.status="AVAILABLE"; d.location={lat:-24.112,lng:-49.334};
+  startShift(d.id,4*60*60); d.location={lat:-24.112,lng:-49.334};
   const city=capacityForCity("Itararé");
   assert(city.availableCapacity>=1);
   assert(city.committedReservations>=0);
