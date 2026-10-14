@@ -23,7 +23,7 @@ jobs:
       - name: TypeScript build
         run: npm run build
       - name: Canonical issue tests
-        run: node --test-concurrency=1 --import tsx --test tests/issues/*.test.ts/*.test.ts
+        run: node --test-concurrency=1 --import tsx --test tests/issues/*.test.ts
       - name: Existing unit and BDD suites
         run: npm test
       - name: Operational simulation pipeline
