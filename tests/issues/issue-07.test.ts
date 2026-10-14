@@ -4,10 +4,11 @@ import {drivers,orders,resetStore} from "../../src/store.js";
 import {createOrder,onPaymentConfirmed} from "../../src/services/orders.js";
 import {confirmPayment} from "../../src/services/payments.js";
 import {acceptDispatch,rejectDispatch,transitionDelivery} from "../../src/services/dispatch.js";
+import {startShift} from "../../src/services/shifts.js";
 
 test.beforeEach(()=>{resetStore();process.env.FINANCIAL_API="http://127.0.0.1:9"});
 
-function ready(){for(const d of drivers.values()){d.status="AVAILABLE";d.location={lat:-24.112,lng:-49.334};d.sessionId="issue-07";d.activeSecondsToday=3600}}
+function ready(){for(const d of drivers.values()){startShift(d.id,4*60*60);d.location={lat:-24.112,lng:-49.334};d.activeSecondsToday=3600}}
 
 test("dispatch follows offer, acceptance and delivery states",async()=>{
  ready();
