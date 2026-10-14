@@ -6,7 +6,7 @@ const DEFAULT_MAX_SHIFT=4*60*60;
 const DEFAULT_REST=60*60;
 
 function defaults(driverId:string):WorkPolicy{
- return{driverId,maxShiftSeconds:DEFAULT_MAX_SHIFT,requiredRestSeconds:DEFAULT_REST,enabled:true};
+ return{id:driverId,driverId,maxShiftSeconds:DEFAULT_MAX_SHIFT,requiredRestSeconds:DEFAULT_REST,enabled:true};
 }
 
 export function getWorkPolicy(driverId:string){
@@ -20,6 +20,7 @@ export function getWorkPolicy(driverId:string){
 export function setWorkPolicy(driverId:string,input:Partial<Omit<WorkPolicy,"driverId">>){
  const current=getWorkPolicy(driverId);
  const next:WorkPolicy={
+  id:driverId,
   driverId,
   maxShiftSeconds:Math.max(60,Number(input.maxShiftSeconds??current.maxShiftSeconds)),
   requiredRestSeconds:Math.max(0,Number(input.requiredRestSeconds??current.requiredRestSeconds)),
