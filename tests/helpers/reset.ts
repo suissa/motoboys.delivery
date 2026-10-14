@@ -1,3 +1,3 @@
-import {resetStore} from "../../src/store.js";
-export function resetState(){resetStore()}
-\nexport {resetState as resetStore};\n
+import {resetStore as resetStoreData} from "../../src/store.js";
+export function resetState(){resetStoreData()}
+export const resetStore=resetState;
