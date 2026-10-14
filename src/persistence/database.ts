@@ -125,8 +125,7 @@ export function transaction<T>(work:()=>T):T{
     if(outer){
       const now=new Date().toISOString();
       const insert=database.prepare("INSERT INTO state_history(transaction_id,collection,entity_id,operation,state_json,recorded_at) VALUES(?,?,?,?,?,?)");
-      for(const item of dirty.values())insert.run(transactionId,item.collection,item.id,item.operation,item.state,now);
-      insert.close();
+      for(const item of dirty.values())insert.run(transactionId!,item.collection,item.id,item.operation,item.state,now);
       database.exec("COMMIT");
       transactionId=undefined;
       dirty=new Map();
@@ -306,7 +305,6 @@ export function appendStoredEvent(event:{
     insertProjection.run(event.eventId,projection.projectionName,projection.collection,projection.entityId,projection.state===null?null:JSON.stringify(projection.state));
     applyProjection(projection);
   }
-  insertProjection.close();
 }
 
 export function applyProjection(update:ProjectionUpdate){
