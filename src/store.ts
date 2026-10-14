@@ -1,7 +1,7 @@
 import type {Company,Driver,Order,Payment,Shift,WorkPolicy,LocationSession,CapacityReservation,Provider,ConversationalTwin} from "./domain.js";
 import {clearCollection,deleteEntity,entityExists,history,readEntity,readEntities,resetDatabase as resetPersistentDatabase,setEntity,transaction,updateEntityProperty} from "./persistence/database.js";
 
-type Entity={id:string}&Record<string,unknown>;
+type Entity={id:string};
 
 class PersistentMap<T extends Entity>{
   constructor(private readonly collection:string){}
