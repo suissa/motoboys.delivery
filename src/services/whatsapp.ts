@@ -103,10 +103,10 @@ export class OfficialWhatsApp implements WhatsAppGateway{
 
 function signatureBuffer(rawBody:string,signature:string,secret:string){
  const normalized=signature.startsWith("sha256=")?signature.slice(7):signature;
- const expected=crypto.createHmac("sha256",secret).update(rawBody).digest("hex");
- const a=Buffer.from(expected,"hex");
- const b=Buffer.from(normalized,"hex");
- return a.length===b.length&&crypto.timingSafeEqual(a,b);
+ if(!/^[a-f0-9]{64}$/i.test(normalized))return false;
+ const expected=crypto.createHmac("sha256",secret).update(rawBody).digest();
+ const supplied=Buffer.from(normalized,"hex");
+ return supplied.length===expected.length&&crypto.timingSafeEqual(expected,supplied);
 }
 
 export function verifyOfficialWebhook(rawBody:string,signature:string|undefined,secret=process.env.WHATSAPP_APP_SECRET??""){
