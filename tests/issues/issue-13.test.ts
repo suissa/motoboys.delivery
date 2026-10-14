@@ -14,7 +14,7 @@ test("work policy caps shifts and blocks dispatch during required rest",()=>{
  const d=drivers.get("moto-01")!;
  d.location={lat:-24.112,lng:-49.334};
  enforceRest(d.id);
- assert.equal(d.status,"RESTING");
+ assert.equal(drivers.get(d.id)?.status,"RESTING");
  assert.equal(rankCandidates({lat:-24.112,lng:-49.334}).some(x=>x.driver.id===d.id),false);
  endShift(d.id);
  assert.equal(d.deliveries,0);
