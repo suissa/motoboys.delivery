@@ -41,9 +41,9 @@ test("shift starts, enforces rest and ends",()=>{
 });
 
 test("whatsapp parser accepts text, location and media",()=>{
- assert.equal(parseIncoming({message:{from:"x",text:{body:"oi"}}).text,"oi");
- assert.deepEqual(parseIncoming({message:{from:"x",location:{latitude:"1",longitude:"2"}}).location,{lat:1,lng:2});
- assert.equal(parseIncoming({message:{from:"x",image:{url:"u"}}).mediaUrl,"u");
+ assert.equal(parseIncoming({message:{from:"x",text:{body:"oi"}}}).text,"oi");
+ assert.deepEqual(parseIncoming({message:{from:"x",location:{latitude:"1",longitude:"2"}}}).location,{lat:1,lng:2});
+ assert.equal(parseIncoming({message:{from:"x",image:{url:"u"}}}).mediaUrl,"u");
 });
 
 test("pix lifecycle creates, confirms and expires",async()=>{
